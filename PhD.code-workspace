@@ -5,11 +5,11 @@
             "name": "PhD-Root"
         },
         {
-            "path": "Loss_Tangent",
+            "path": "Loss",
             "name": "Loss Tangent"
         },
         {
-            "path": "Freq_Shift",
+            "path": "Shift",
             "name": "Frequency Shift"
         }
     ],
