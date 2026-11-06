@@ -26,6 +26,7 @@
                 "options": {
                     "cwd": "${workspaceFolder}"
                 },
+                "group": "build",
                 "presentation": {
                     "reveal": "silent",
                     "panel": "shared",
