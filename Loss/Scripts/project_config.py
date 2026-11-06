@@ -59,7 +59,7 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE):
         "V_bias": v_bias,
 
         # Files
-        "raw_csv": data_dir / f"resonator_data_{v_bias}.csv",
+        "raw_csv": data_dir / f"resonator_data_{volt}.csv",
         "spatial_npz": data_dir / "hfss_spatial_data.npz",
         "processd_csv": comp_dir / "processed_compute.csv",
         "tau_chain": fit_dir / "tau_fit.csv",
