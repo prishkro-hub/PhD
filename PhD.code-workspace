@@ -20,7 +20,7 @@
         "version": "2.0.0",
         "tasks": [
             {
-                "label": "Git Fast-Push-Pull Code",
+                "label": "Git Fast-Push Code",
                 "command": "git add -A && (git diff --cached --quiet || git commit -m \"Automatted cluster update via VS Code\") && git pull && git push",
                 "type": "shell",
                 "options": {
