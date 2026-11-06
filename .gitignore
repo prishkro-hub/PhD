@@ -1,0 +1,40 @@
+# Python Virtual Environments
+.venv*/
+env/
+venv/
+
+# Python Cache & Artifacts
+__pycache__/
+*.pyc
+
+# IDE Settings (Optional, but usually good to ignore)
+.vscode/
+
+# Large Data Files (MCMC Chains, arrays, etc.)
+*.xlsx
+*.csv
+*.h5
+*.npy
+*.npz
+
+# Large Outputs (plots, logs, etc.)
+*.png
+*.PNG
+*.log
+*.pdf
+*.docx
+*.tex
+*.zip
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# SSH Keys and config (CRUCIAL)
+.ssh/
+
+# Irrelevant Directories
+Courses/
+Literature/
+Recent_Papers/
+Side_Project/
