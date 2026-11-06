@@ -1,0 +1,47 @@
+As described above, we check the photon direction against the base estimation that the photon direction will be opposite to the di-jet. We tested both the band method and a machine learning method based on the model outlined in section \ref{sec:event_topology_ml}, where the classification head was set to distinguish only between photon sides. The inputs for the model are the same as discussed above, as well as the loss functions.
+
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[clip=true, trim={0cm 2.5cm 0cm 1cm},width=1.0\linewidth]{\main/figures/SideDiscrimination_ML.pdf}
+	\caption{Confusion matrices for the training and testing samples for photon side discrimination. The plots show slight overfitting, but unbiased prediction on both samples.}
+	\label{fig:ml_sideDiscrimination}
+\end{figure}
+
+
+The general performance results are summarized in Table \ref{tab:SummaryOfResults}. From it we can see that all methods are fairly unbiased with respect to a single detector side, as expected. In addition,  both band and ML methods outperform the initial estimate, which we later see is due to the mid-rapidity di-jet events. These methods fix the issue of misclassifying the $\gamma\gamma$ samples which remain post event selection. These misidentifications are caused by the $\gamma\gamma$ direct-resolved contributions for which the di-jet rapidity is forward-biased instead of backward bias. But, as most of these events are located close to mid rapidity, they are handled well in both the band and ML methods. The distribution of accuracy with respect to $H_T$ and $y_{jets}$ was also tested. In Fig. \ref{fig:photon_direction_Ht} and \ref{fig:photon_direction_yjets}, one can see the distributions of accuracy according to these observables.
+
+
+\input{\main/tables/PhotonDirectionSummaryTable.tex} 
+
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[width=0.45\textwidth]{\main/figures/jetSystemHt_gammaA.pdf}
+	\includegraphics[width=0.45\textwidth]{\main/figures/jetSystemHt_gammaP.pdf}
+	\caption{Accuracy plots for $\gamma A$ (left) and $\gamma \mathbb{P}$ (right) binned in $H_T$. Different colors assigned to the different methods used for the calculation.}
+	\label{fig:photon_direction_Ht}
+\end{figure}
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[width=0.45\textwidth]{\main/figures/jetSystemRapidity_gammaA.pdf}
+	\includegraphics[width=0.45\textwidth]{\main/figures/jetSystemRapidity_gammaP.pdf}
+	\caption{Accuracy plots for $\gamma A$ (left) and $\gamma \mathbb{P}$ (right) binned in $y_{jets}$. Different colors assigned to the different methods used for the calculation.}
+	\label{fig:photon_direction_yjets}
+\end{figure}
+
+In Fig. \ref{fig:photon_direction_yjets}, one can clearly see the difficulty in assessing the direction at mid-rapidity for both $\gamma A$ and $\gamma \mathbb{P}$ while relying only on the di-jet position. The band method improves conditions in mid-rapidity, especially in $\gamma A$. However, the ML model outperforms both methods and reaches an accuracy per bin of at least 90\%. In addition, it can be seen that both algorithms outperform the $\eta$ method at low $H_T$ values, and barring statistical uncertainties, continue to exhibit better performance at high $H_T$ bins, showing it is applicable over a wide range of the phase space.
+
+Finally, while the models were prepared with the 0n0n case in mind, given their performance, a check against data in 0nXn is performed, where the ZDC provides the ``truth'' information. In Fig. \ref{fig:0nXn_photon_direction}, One can see that the results in $H_T$ and $y_{jets}$ are comparable to the MC.
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[width=0.45\textwidth]{\main/figures/jetSystemHt_0nXn.pdf}
+	\includegraphics[width=0.45\textwidth]{\main/figures/jetSystemRapidity_0nXn.pdf}
+	\caption{Accuracy plots for 0nXn binned in $H_T$ (left) and $y_{jets}$ (right). ``Truth'' information defined by ZDC X direction.}
+	\label{fig:0nXn_photon_direction}
+\end{figure}
+
+
+

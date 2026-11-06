@@ -1,0 +1,63 @@
+\subsection{Sample Discrimination}
+
+In the same way as the machine learning approach for the photon direction, by adjusting the target criteria and the decision block, the same model can be used to differentiate between different processes. A few different methods have been tested: Multi-Class discrimination and more general binary arch-type discrimination, which will be detailed below.
+
+\subsubsection{Multi Process Discrimination}
+
+Given the MC samples of multiple initial states, as described in section \ref{sec:event_selection}, all of them could be placed into the model at once in order to make granular separation. The decision block structure for this task is outlined in Fig. \ref{fig:ML_diagram}. The latent space from the embedding block is passed through a DNN classifier, which is terminated by a 5-neuron layer which provides the logits related to the probability of the sample being any of the 5 processes (classes in ML jargon). These logits then go through a softmax activation function and are compared to a hot-encoded target value. The results are being shown in Fig. \ref{fig:allProcessDiscrimination}.
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[clip=true, trim={0cm 2.5cm 0cm 1cm},width=1.0\linewidth]{\main/figures/AllProcessesML_ConfusionMatrix.pdf}
+	\caption{Confusion matrices for the training and testing samples for multi-class classification. Percentages sum along the columns to 100\%, thus showing the distribution of truth with respect to different predictions. There is some block structure showing separation of $\gamma \gamma$ from $\gamma A$ , $\gamma \mathbb{P}$ contributions, while there is some overlap between $\gamma \mathbb{P}$ and $\gamma \gamma $RR. }
+	\label{fig:allProcessDiscrimination}
+\end{figure}
+
+As can be seen, the accuracy, as indicated by the numbers along the diagonal, are high enough to disprove combinatorial success. However, looking at both the training and testing samples, it is clear there is over-fitting in place. Further, it can be seen by the position of high inaccuracy off-diagonal elements that the model is struggling in distinguishing between samples within the $\gamma\gamma$ branch of processes, most likely due to low statistics in the number of events from each group. In addition, as we expect, in broad terms, for $\gamma \mathbb{P}$ to be between $\gamma\gamma$ and $\gamma A$ with respect to to the momentum transfer to the nucleus, we also see the inaccuracies for $\gamma \mathbb{P}$ being shifted between $\gamma A$ and $\gamma\gamma$ resolved-resolved predictions.
+
+\subsubsection{Binary Process Discrimination}
+Due to the results above, we present below the attempt to first make discrimination between $\gamma\gamma$ and $\gamma A$ processes, and the effect it has on the $\gamma \mathbb{P}$ sample. The various samples from all the $\gamma\gamma$ processes were consolidated under a single class, while $\gamma A$ was designated as the 2nd class. In addition, the decision block was changed to provide two-class logit outputs. The results of this classification are presented in Fig. \ref{fig:gg_gA_discrimination}.
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[clip=true, trim={0cm 2.5cm 0cm 1cm},width=1.0\linewidth]{\main/figures/GamGamPhotonuclear_ConfusionMatrix.pdf}
+	\caption{Confusion matrices for the training and testing samples for binary $\gamma \gamma$ , $\gamma A$ where all $\gamma \gamma$ processes were labeled as one. Percentages sum along the columns to 100\%, thus showing the distribution of truth with respect to different predictions.}
+	\label{fig:gg_gA_discrimination}
+\end{figure}
+
+The over-fitting is low compared to the previous model, and the accuracy is much higher. In addition,two other models, used to differentiate $\gamma A$ and $\gamma \mathbb{P}$ and $\gamma \gamma $, $\gamma \mathbb{P}$ samples were trained, with the results given in Fig. \ref{fig:gA_gP_discrimination} , \ref{fig:gg_gP_discrimination} . As expected from the multi-class model, and from our understanding of the similarities between the final states of both samples, the results are worse than in the $\gamma\gamma$, $\gamma A$ case. The current stopping point for the training samples was a balanced accuracy across samples, although there is still work to be done, if, due to cross sections a bias towards higher efficiency of the dominant samples will be preferred. 
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[clip=true, trim={0cm 2.5cm 0cm 1cm},width=1.0\linewidth]{\main/figures/gAgP_ConfusionMatrix.pdf}
+	\caption{Confusion matrices for the training and testing samples for $\gamma A$ and $\gamma \mathbb{P}$ processes. Percentages sum along the columns to 100\%, thus showing the distribution of truth with respect to different predictions.}
+	\label{fig:gA_gP_discrimination}
+\end{figure}
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[clip=true, trim={0cm 2.5cm 0cm 1cm},width=1.0\linewidth]{\main/figures/confusion_matrix_2_combined.pdf}
+	\caption{Confusion matrices for the training and testing samples for $\gamma \gamma$ and $\gamma \mathbb{P}$ processes. Percentages sum along the columns to 100\%, thus showing the distribution of truth with respect to different predictions.}
+	\label{fig:gg_gP_discrimination}
+\end{figure}
+
+Finally, all models (including photon direction) were applied to both 0n0n and 0nXn 2018 data samples, and were then used to reconstruct from data the $y_jets$ distribution, for comparison with Fig. \ref{fig:yjets_mc_distributions}. The decision process on the sample classification can be seen in Fig. \ref{fig:sample_classification_tree}, and is informed by the results we see from the multi-class classification in Fig. \ref{fig:allProcessDiscrimination}. Due to the block matrix structure, the $\gamma\gamma - \gamma A$ classification is made, and then the comparison of each to $\gamma \mathbb{P}$ is made. 
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[width=0.6\linewidth]{\main/illustrations/DecisionProcess.pdf}
+	\caption{Diagram of the decision process for final sample classification based on the results of the different models.}
+	\label{fig:sample_classification_tree}
+\end{figure}
+
+The results are shown in Fig. \ref{fig:y_jets_data}. It is important to note that there are currently no uncertainties associated with the models that were propagated to the figure, and Fig. \ref{fig:yjets_mc_distributions} was not corrected for cross sections between samples and between $\gamma \mathbb{P}$ different contributions.
+
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[width=1.0\linewidth]{\main/figures/ML_applied_to_data_yjets.pdf}
+	\caption{Plots of $y_{jets}$ for 0nXn (Left) and 0n0n (Right), separating out the different contributions according to the ML models. Events were selected based on the photon direction model such that the nucleus emitting the photon goes in positive rapidity.}
+	\label{fig:y_jets_data}
+\end{figure}
+
+As can be seen in Fig. \ref{fig:y_jets_data}, the peaks of $\gamma A$ and $\gamma \mathbb{P}$ match quite well with MC. in particular, it is interesting to see that the models suggest that in 0n0n there is much more photo-diffractive contribution in the form of a coherent process, giving jets closer to mid-rapidity, but in the 0nXn sample, almost all the contribution comes from incoherent diffraction, as expected given the sample is selected by nuclear breakup. This plot is an encouraging first preliminary result that there is a measurable difference between $\gamma A$ and $\gamma P$ contributions in the final states, which can be explored and used to make better selections for future measurements.

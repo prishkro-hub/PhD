@@ -1,0 +1,29 @@
+\subsection{Estimating Photon Direction in UPC dijet events}
+
+When looking at UPC di-jet events, there are a few general properties which can be used to establish a sense of the probing photon direction.
+First, the di-jet rapidity for $\gamma A$, will be produced in the probed nucleus center-of-mass, and therefore will be backwards to the probing photon direction in the lab frame. Symmetric $\gamma \gamma$ contributions will have no side preference and therefore centered at zero rapidity, while asymmetric $\gamma \gamma$ will be forward with respect to the resolved photon. $\gamma \mathbb{P}$ will also be backward with respect to the photon direction, as can be seen in Fig. \ref{fig:yjets_mc_distributions}. 
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[width=0.8\textwidth]{\main/figures/mean_eta_full.pdf}
+	\caption{$y_{jets}$ distribution for different MC samples. Nucleus emitting the probing $\gamma$ is traveling towards forward rapidity. The $\gamma \mathbb{P}$ contribution includes 2 peaks: one closer to mid-rapidity, which stems from events where the nucleus underwent coherent diffraction, and one closer to backward rapidity, where the diffraction was stemmed from incoherent interaction. }
+	\label{fig:yjets_mc_distributions}
+\end{figure}
+
+Therefore, in samples with high fraction of photo-nuclear and photo-diffractive events as produced by this analysis selections, a good first choice for photon direction is to choose the photon direction as opposite to the pseudo-rapidity in which the di-jet of the event was measured. We will refer to this method later as the ``$\eta$ method''.
+
+However, this method is inconsistent near mid-rapidity. In order to resolve that, one can check for other properties of UPC events. Given that we are looking at a photon-initiated event, the direction of the probing nucleus which emitted the photon should not have any color charge within it. In contrast, the probed nucleus which produced the di-jet, will have color-charged particles, which due to confinement, will generate new particles filling a band in $\eta$.
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[width=0.9\textwidth]{\main/illustrations/event_display.pdf}
+	\caption{Event Display of a single $\gamma A$ event with the nucleus emitting the photon going towards positive $\eta$. The event is overlaid with the edge gaps and the particle bands. Edge gaps are in gray,A side band in green and C side band in red, with the reference point being the mean di-jet position in $\eta$. This specific example also shows the edge case in which detector acceptance can change the answer.}
+	\label{fig:topology_and_band}
+\end{figure}
+
+As can be seen in Fig. \ref{fig:topology_and_band}, identifying and selecting on that band can point into the direction of the probing photon. Therefore, this method, which will be named the ``band method'', decides on the photon direction by setting the di-jet pseudo-rapidity as an anchor point, and declaring two bands, one for each direction of the detector up to the last particle in acceptance in that side. The band of minimal length in $\eta$ is then pointing to the direction of the photon.
+
+It is important to clarify that this method only works if the particle trail is within the acceptance of the detector. Loss of acceptance can lead to misidentification. As a result, in forward events, which are defined as events where the di-jet pseudo-rapidity is larger than 2.5, there will be a high chance of cutting the particle trail and making false predictions. To remedy that, such events will use the ``$\eta$ method'', which will perform better for $\gamma A$ and $\gamma \mathbb{P}$ but will miss the few $\gamma\gamma$ that are forward enough.
+
+\begin{equation}\label{eq:band_method}
+\end{equation}

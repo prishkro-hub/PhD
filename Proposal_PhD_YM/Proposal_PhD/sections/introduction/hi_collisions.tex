@@ -1,0 +1,37 @@
+\subsection{Heavy Ion Collisions}
+
+At the Large Hadron Collider (LHC), experiments are run to probe subatomic interactions. These experiments are carried out by colliding beams of particles at interaction points (IPs), in which detector complexes are built in order to measure the outgoing particles of the collisions. The beams are being controlled by a complex array of superconducting electromagnets which adjust the beams to collide at the aforementioned IPs. Through most of the year, the LHC is run in pp mode - i.e colliding bunches of protons with other protons. However, there are specific programs in which heavy ions are collided. For the rest of the thesis we will concern ourselves with Pb + Pb  collisions, in which both beams are comprised of Pb nuclei.
+
+These Pb nuclei can interact in the IP in several ways, depending on the initial event geometry. This initial geometry is often referred to as the centrality of the event. We usually think of nuclei - nuclei interaction in terms of the nucleon pairs which interacted with each other (e.g proton-proton or proton-neutron). we call the number of pairs which had a head-on interaction as the number of participants in the collision. The nucleons which did not participate in the collision are called spectators. The nomenclature for these types of events is as follows:
+
+%--! Include schematics of different centralities here !--
+
+\begin{itemize}
+ \item UCC (Ultra Central Collisions)
+ \item CC (Central Collisions)
+ \item PC (Peripheral Collisions)
+ \item UPC (Ultra Peripheral Collisions)
+\end{itemize}
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[width=0.5\textwidth]{\main/illustrations/CollisionTypeIllustration.pdf}
+	\caption{Illustration of the collision geometry as function of impact parameter b. The blue region represents the overlapping region in which collision participants interact hadronically, while nulceons in the red region are spectators to the event.}
+	\label{fig:coll_geometry}
+\end{figure}
+
+As centrality varies from collision to collision, one has to extract it from the final state of each collision. One way to do that is by looking at the outcome of the collision and searching for remnants of the original nuclei. As established prior, these remnants are spectators to the collision, and through a straightforward analogue to the centrality as the overlap of the two nuclei, the spectators are a probe into the centrality of the event. 
+
+However, it is not a one-to-one translation. As a result of the beam magnets, remnants that include charge (protons and heavier nuclei such as \ce{^{3}_{}He}, etc.) are bent away by the magnets and will not reach a detector, and thus information is lost. The only remnants not affected by the magnets are neutrons, which can be counted using a detector sitting along the beam line (section \ref{sec:zdc}). The number of spectator neutrons can then be mapped to two different regions in centrality, which is usually demonstrated by forward calorimeter energy as in Fig. \ref{fig:zdc_fcal}. In this case, discrimination on the centrality is done via the forward energy, as a selection independent from the number of tracks, which is used in most analysis.
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[width=0.6\textwidth]{\main/figures/ATL-COM-FWD-2023-032_Fig_2.pdf}
+	\caption{Correlation between the total energy measured in the two sides of the ZDC and the total transverse energy measured in the ATLAS forward calorimeter (FCal). The faint second band above the main band results from events having in-time pileup \cite{cole_zero_2023}. }
+	\label{fig:zdc_fcal}
+\end{figure}
+
+
+
+
+

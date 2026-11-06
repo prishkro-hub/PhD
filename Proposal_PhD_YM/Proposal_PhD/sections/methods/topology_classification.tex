@@ -1,0 +1,93 @@
+\subsection{ Classification model based on event topology }
+
+Due to the immense phase space that exists with high multiplicities of tracks and clusters, it is extremely hard to search for kinematics and correlations. As discussed before, there are two main questions that are currently hard to answer when performing UPC analysis without breakup: namely, the interaction type and direction. In order to try and improve photon direction discrimination, as well as  differentiate between $\gamma A$, $\gamma \mathbb{P}$, and $\gamma \gamma$ contributions, one can search the phase space by using a neural network. Additionally, a neural network such as CNN or ResNet can also allow for the extraction of physics from the weights and activation maps post training. Below we will outline a generalized model for learning tasks in 0n0n UPC and the data pipeline associated with it.
+
+As described above, convolutional neural networks are very appealing, as one can visually inspect the filters produced by the network to understand what part of an image the network is focusing on \cite{haar_analysis_2023}. As mentioned in the introduction, since 2015 ResNets have been shown to outperform regular CNNs, while still having the ability to extract feature maps. As a result, this model will be composed of two parts:
+
+\begin{description}
+    \item [Embedding Block] This part of the network will have track and topocluster maps as input, in addition to event-level information as will be outlined below. The maps are processed through two separate ResNet-50 implementations, which then will be concatenated with the event data. The final layer in this implementation will embed the latent space of the events.
+    \item [Decision Block] The decision block will be selected based on the task at hand. For classification, a DNN will be used to differentiate between different process samples or between photon direction. Additional architectures can easily be implemented in order to perform other tasks.
+\end{description}
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[clip=true, trim={0cm 3cm 0cm 1cm},width=1.0\textwidth]{\main/illustrations/Model_diagram.pdf}
+	\caption{Diagram of the ML model. The track and topocluster maps receive the same treatment by two different instances of a ResNet 50 variant network, before being concatenated with tabular event data. Each of the ResNet blocks can generate activation maps of the filters associated with it.  }
+	\label{fig:ML_diagram}
+\end{figure}
+
+\subsection{Data preparation}
+
+To prepare the data for this type of search, each event produced two 77x77 pixel maps in $\eta-\phi$  space, one for tracks and one for topoclusters. The map consists of circles with centers at the position of the tracks/clusters, with an area corresponding to the track/cluster $p_T$.  To make it easier to capture effects with respect to the jets, the leading jet was chosen as an anchor, and the map was rotated so that the leading jet is centered along $\phi$ .
+
+\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[width=0.6\textwidth]{\main/illustrations/event_rotation.pdf}
+	\caption{$\eta$-$\phi$ map of a single event, where both tracks and clusters are present. (a) Event map prior to rotation. (b) Post rotation. }
+	\label{fig:event_rotation}
+\end{figure}
+
+In addition to the images, tabular data was also generated which contained the following observables:
+
+\begin{multicols}{2}
+	\begin{itemize}
+         \item leading jet $p_T$ ,$\eta$ ,$\phi$ 
+         \item sub-leading jet $p_T$ ,$\eta$ ,$\phi$ 
+         \item $H_T$
+         \item $M_{jets}$
+         \item $y_{jets}$
+         \item $\Delta\eta_A$ , $\Delta\eta_C$ 
+         \item $\Sigma\Delta\eta_A$ , $\Sigma\Delta\eta_C$ 
+         \item Estimated photon direction.
+	\end{itemize}
+\end{multicols}
+
+These values are normalized so that all values are in the region $[-1,1]$ for numerical stability of the model. $p_T$, $H_T$ and $M_{jets}$ are converted to TeV units, while the various gaps and $\eta$ are normalized to the detector acceptance range. $\phi$ is normalized to $2 \pi$ .
+
+
+\subsection{Loss function}
+As established in section \ref{sec:ML}, the loss function is critical in order to establish the learning of the network.
+In this case, the network has to deal with highly imbalanced data, as a result of the analysis cuts and selections, and due to the complexity, has a high tendency to overfit the data. Therefore the loss function is set as a sum of different contributions to address these issues:
+
+\begin{equation}
+	\mathcal{L} = \alpha(\mathcal{L}_{Dice} + \beta*\mathcal{L}_{OD} + \Gamma*\mathcal{L}_{CE} + \delta*\mathcal{L}_{L1}) 
+\end{equation}
+
+\begin{description}
+	\item [Dice Loss ($\mathcal{L}_{Dice}$) ] Dice loss is commonly used in medical ML application, such as tumor detection, has certain robustness to class imbalance \cite{yeung_calibrating_2023}. The basic idea is to  quantify the overlap between prediction and truth information per class of samples, using intersection and union. For binary classification, it is defined as:
+	
+	\begin{equation}
+		\mathcal{L}_{Dice} = 1 - 2\sum_{i}\frac{y_i \cap \hat{y}_i}{y_i \cup \hat{y}_i} \,,
+	\end{equation}
+	
+	where $y_i$ are the prediction per sample and $\hat{y}_i$ is the truth label for the ith sample. Its variation for the purpose of this network works as follows. The intersection is softened into a multiplication, while the union turns into addition, allowing the loss to be calculated with logits. This soft dice loss is seen in eq. \ref{eq:soft_dice}
+	
+	\begin{equation}\label{eq:soft_dice}
+		\mathcal{L}_{Dice} = 1 - 2\sum_{c}\frac{1}{N_c}\sum_{i}\frac{y_{i,c} \cdot \hat{y}_{i,c}}{y_{i,c} +\hat{y}_{i,c} +\epsilon}\,,
+	\end{equation}
+	
+	where c is the number of classes, i is the number of samples per batch and $N_c$ is the number of samples from a specific class c.
+	To properly describe the logits as probabilities, they are passed through the softmax function applied to all the classes for a given sample.
+	
+	\item [Off Diagonal Cost ($\mathcal{L}_{OD}$)] The off diagonal cost is a term that helps to penalize misidentification more strongly than dice loss, and instead of worrying about the overlap, it penalizes deviations from full accuracy in proportion to the number of mismatched events.
+	\begin{equation}
+		\mathcal{L}_{OD} = \sum_i y_i(1-\hat{y}_i)
+	\end{equation}
+	
+	\item [Cross Entropy Loss ($\mathcal{L}_{CE}$)] Cross Entropy loss is a common classification loss in machine learning, and is widely used for classification tasks. It rewards good matching while penalizing deviations, as seen below:
+	\begin{equation}
+		\mathcal{L}_{CE} = -\sum_i\hat{y}_i * log(y_i)
+	\end{equation}
+	
+	\item [L1 regularization ($\mathcal{L}_{L1}$)] As explained in section \ref{sec:ML}, it adds an overall cost proportional to the absolute values of all the weights in the model, and effectively used to trim unneeded weights and paths to reduce over-fitting.
+	
+\end{description}
+
+
+\subsection{Training the model}
+For the training, we split the MC data into 70/30\% split for training and testing, respectively. The training sample was then resampled to balance out the classes used during training, as a way to further control the CE portion of the loss function. The testing data remained imbalanced in order to see if the results of the network carry over to the imbalanced case. The optimizer selected for training is the Adam algorithm \cite{kingma_adam_2017}, which allows for more robustness. The hyper parameters used in the optimizer and loss function are listed in Table \ref{tab:hyper_param}. This table lays out the hyperparameters used in the training of the model in order to reproduce the results shown later.
+
+\input{\main/tables/hyper_param_table.tex}
+
+
+

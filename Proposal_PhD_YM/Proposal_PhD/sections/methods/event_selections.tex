@@ -1,0 +1,107 @@
+
+The data used in the analysis is the 2018 Pb + Pb ATLAS data, given by the following triggers:
+
+\input{\main/tables/trigger_table.tex}
+
+where  the High Level Trigger (HLT) in all triggers is a jet above 10 GeV. For 0n0n, the level 1 trigger is an online requirement on ZDC which veto if any ZDC saw more than 5 TeV and less than 200 TeV. For 0nXn, the level 1 trigger requires exactly 1 ZDC with energy between  5  TeV and  200 TeV. In addition to the experimental data, MC is extensively used as well. The following MC samples were generated using Pythia8 \cite{bierlich_comprehensive_2022} and then ran through the ATLAS reconstruction to produce reconstructed quantities to be used in the analysis.
+
+\begin{itemize}
+	\item $\gamma A \rightarrow$ jets
+	\item $\gamma \mathbb{P} \rightarrow$ jets (Both coherent and incoherent) 
+	\item $\gamma \gamma \rightarrow$ jets (direct-direct (DD), direct-resolved (DR,RD), and resolved-resolved (RR))
+\end{itemize}
+
+\subsection{Offline Selections}
+
+Offline selections were applied equally to both Data and MC where applicable. This does not apply to ZDC as there was no ZDC simulation in the ATLAS reconstruction at the time of generating the MCs.
+
+\subsubsection{Track and Topocluster Selections}
+
+\begin{description}
+	\item [Track Selections] Tracks are selected based on the pp MinBias working point, due to the low multiplicity in UPC collisions  in addition to a 200 MeV $p_T$ threshold requirement. The MinBias WP \cite{aaboud_performance_2017} requirements are:
+	\begin{itemize}
+		\item $|\eta| < 2.5$
+		\item Minimum of 7 pixel and SCT clusters (12 are expected)
+		\item Maximum of either one shared pixel cluster or two shared SCT clusters on the same layer
+		\item Not more than two holes in the combined pixel and SCT detectors
+		\item Not more than one hole in the pixel detector
+		\item $|d_{0}^{BL}| < 2.0 $ mm
+		\item $|z_{0}^{BL}sin\theta| < 3.0 $ mm
+	\end{itemize}
+	where a hole is an intersection of track trajectory with sensitive detector element without cluster, $d_{0}^{BL}$ is the radial distance of the track with respect to the beam line ,and $z_{0}^{BL}$  is the distance between the primary vertex and point in which $d_{0}^{BL}$ is measured.
+	\item [Topocluster Selections] Topoclusters have the same minimum $p_T$ requirement as tracks. In addition to that, there are the following requirements:
+	\begin{itemize}
+		\item Reconstructed clusters have to be outside the tile Gap ($1.0 < |\eta| < 1.7$).
+		\item Cuts on cluster significance (for Tile  ($\eta < 1.5$) and Hadronic End Cap + FCal ($\eta > 1.7$)).
+	\end{itemize}
+\end{description}
+
+\subsubsection{UPC$\rightarrow$ Di-jet Selections and Cuts}
+\begin{description}
+	\item [Vertex Cuts] An event will be discarded if it has more than one reconstructed  vertex.
+	If there are more than 4 good tracks, it is required to have a vertex.
+	
+	\item [ZDC Energy Offline requirements] Due to trigger turn on and post-run calibration, we enforce an additional offline cut for the ZDCs. As seen in Fig. \ref{fig:atlas_zdc_2023}, a cut at 40\% of the value of the 1 neutron peak ($\sqrt{s_{NN}}/2$) is sufficient to set as an offline selection. Adjusting for 2018 1 neutron peak energy of 2.51 TeV, a threshold of 1 neutron at 1 TeV has been chosen to be conservative in the selection. For 0n0n samples, both ZDC require to have offline calibrated energy of $< 1$ TeV, while for the 0nXn sample, exactly one ZDC is required to have less than 1 TeV, while the other has to exceed that.
+	
+	\item [Gap Cuts] A signature of photonuclear and photodiffractive events is the absence of particles (rapidity gap) in the direction of the nucleus which emitted the probing photon. This is due to the nucleus and photon being color neutral while the diffraction on the probed nucleus will generate color partons, that in turn will cascade into multiple hadrons in the final state. Usually, one would check for lack of particles on one side of the detector as a signature for this type of event, using a quantity known as a rapidity gap: 
+	
+	\begin{equation}\label{eq:gap}
+		\Delta\eta_{\pm} = min|{\pm 4.9 - \eta_{i}|}|\,,
+	\end{equation}
+	where $\eta_i$ is the pseudorapidity of every track and cluster in the event, and $\pm 4.9$ are the acceptance edges in ATLAS. However, stray particles may still appear  near the edge of the detector. As a result, a much more robust quantity known as sum of gaps is used to account for this possibility. Sum of gaps ($\Sigma\Delta\eta$) is calculated by ordering all tracks and clusters in $\eta$ and summing up all gaps if the gaps pass a threshold of 0.5. In the limit that there are no additional particles, this resolves back to edge gaps.
+	
+	The cut is then made that the sum of gaps on either side of the detector has to be at least 2.0 for 0n0n events, while for 0nXn events the requirement is that the sum of gaps in the photon direction is larger than 2.5 units of pseudo-rapidity.
+	
+	\item [Jet requirements and Dijet Selection] Each event is required to have exactly two reconstructed jets with calibrated energy of at least 15 GeV. In addition, in order to establish fiducial acceptance range in pseudo rapidity, the jet is required to have $|\eta|< 4.4$.
+\end{description}
+
+
+\subsubsection{Non Physics Background}
+
+\begin{description}
+	\item [Splash Events] Splash events are events in which the beam interacts with the LHC upstream of the IP, and thus sends particles into the IP. As the particles enter the IP only from the side which had the LHC-beam interaction, the resulting signature in the detector can mimic asymmetric events that will result in pseudo rapidity gaps mimicking real UPC events. However, in a real event there is a relation between the tracks and calorimeter clusters, while in splash events there will be a large deposit of energy clutsers without the appropriate number of tracks. Fig. \ref{fig:splash_cuts} shows the cuts used to distinguish between splash events and real data in both 0n0n and 0nXn samples. As it is more likely the debris will also reach the ZDC, the 0nXn sample has higher contamination of splash events.
+	
+	\begin{figure}[h!] 
+		\centering % Centers the image and caption
+		\includegraphics[width=0.9\textwidth]{\main/figures/SplashEventCuts_0n0n.pdf}
+		\includegraphics[width=0.9\textwidth]{\main/figures/SplashEventCuts_0nXn.pdf}
+		\caption{Representation of the cuts (in red lines) used to remove splash events. As expected, there is much higher contribution of splash events in the 0nXn (bottom two plots) sample due to the probability of neutral fragments reaching the ZDCs. }
+		\label{fig:splash_cuts}
+	\end{figure}
+	
+	\item [Out-of-Time Pileup] Due to the high rate of collisions at the LHC, there is a possibility for 2 or more collisions to occur within a very short time window, such that tracks and energy deposits from one event will affect the recording of another. In particular, out-of-time (OOT) pileup events have a signature in which the energy deposited in the calorimeters by a previous event have not been collected in time, thus making the baseline charge for the next event higher than it should be. Events like this, following calorimeter calibration, will exhibit negative $p_T$ and energy values. These events are then discarded by the following cuts:
+	\begin{itemize}
+		\item	$\Sigma E_T^{FCAL} < -4 \text{ GeV}$
+		\item   $-\Sigma P_T^{negCluster} > 5 \text{ GeV}$
+		\item   $N_{negCluster} > 30 $
+	\end{itemize}
+	
+	\begin{figure}[h!] 
+		\centering % Centers the image and caption
+		\includegraphics[width=0.9\textwidth]{\main/figures/OOTCuts_0n0n.pdf}
+		\includegraphics[width=0.9\textwidth]{\main/figures/OOTCuts_0nXn.pdf}
+		\caption{Representation of the cuts (in red lines) used to remove OOT pileup.}
+		\label{fig:oot_cut}
+	\end{figure}
+
+	
+	\item [Beam halo muons ] Beam halo muons occur in a similar way to splash events, but in this case the debris is stopped in LHC material, while energetic muons pass through the material, guided by the beam magnets and deposit their energy in the calorimeter. Because ATLAS was set up with a horizontal crossing angle for the beams, jets reconstructed from such muons will be peaked at $\phi = 0$, $\pi$ while having no tracks pointing to them. Being guided by the beam magnets has another effect on those muons. As they were generated out of time with respect to the collision, their time distribution will be very broad with respect to the nominal jet times. Therefore, cutting on the jet time will provide good reduction for the beam halo muons. Following Fig. \ref{fig:beamHalo_muons}, a cut to deal with beam halo muons has been selected to be $t < -4.47$ or $t > 5.83$ ns for the 0nXn sample. The same selection remains for the 0n0n sample for comparative studies, although a more preferable cut towards the knee of the distribution will be studied in the future.
+	
+	\begin{figure}[h!] 
+		\centering % Centers the image and caption
+		\includegraphics[width=0.45\textwidth]{\main/figures/JetTimingCuts_0nXn.pdf}
+		\includegraphics[width=0.45\textwidth]{\main/figures/JetTimingCuts_0n0n.pdf}
+		\caption{Plot of calibrated EM Topojets time with Gaussian fit. $5\sigma$ bands are shown in magenta to describe the cuts needed to reduce beam halo muons.}
+		\label{fig:beamHalo_muons}
+	\end{figure}
+\end{description}
+
+
+\subsection{Selection Summary}
+Final selections and cuts are listed in Table \ref{tab:0n0n_cutTable} and Table \ref{tab:0nXn_cutTable}. One can see that even within the sets of UPC triggers provided above, in order to choose the events of interest, there is a major reduction in available events for analysis. 
+
+\input{\main/tables/0n0n.tex}
+
+
+\input{\main/tables/0nXn.tex}
+

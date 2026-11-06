@@ -1,0 +1,33 @@
+%\usepackage[table]{xcolor}
+%\usepackage{array}
+%\usepackage{booktabs}
+
+% Define custom line width (slightly wider than default)
+%\newlength{\thickline}
+%\setlength{\thickline}{1.2pt} % 1.2pt is slightly wider than default ~0.6pt
+%\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+ 
+   \begin{table}[h]
+  \centering
+  \begin{tabular}{l P{1cm} P{1cm} P{1.5cm} P{2cm} }
+  \toprule
+  \rowcolor{white}\textbf{Trigger Chain} & \textbf{Start Run} & \textbf{End Run} & \textbf{Prescale} & \textbf{Integrated Luminosity [$nb^{-1}$]} \\
+   \hline
+   \rowcolor{lightgray}\multicolumn{5}{c}{0n0n Triggers} \\
+   \hline
+   HLT\_j10\_L1VZDC\_A\_C\_TE5\_VTE200 & 365498 & 366627 & 1.0 & 634.2 \\
+   \hline
+   HLT\_j10\_0eta490\_L1VZDC\_A\_C\_TE5\_VTE200 & 366691 & 367384 & 1.0 & 1083.6 \\
+   \hline
+   \rowcolor{lightgray}\multicolumn{5}{c}{0nXn Triggers} \\
+   \hline
+  HLT\_j10\_L1ZDC\_XOR\_TE5\_VTE200 & 365498 & 366627 & 1.0 & 634.2 \\
+  \hline
+  HLT\_j10\_0eta490\_L1ZDC\_XOR\_TE5\_VTE200 & 366691 & 367384 & 1.52 & 712.9 \\
+  \bottomrule
+  \end{tabular}
+    \caption{Trigger chains and run statistics used in this analysis.}
+  \end{table}
+
+
+

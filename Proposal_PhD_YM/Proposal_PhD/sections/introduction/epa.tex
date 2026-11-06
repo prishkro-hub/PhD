@@ -1,0 +1,18 @@
+
+The Equivalent Photon Approximation (EPA) is a framework in high-energy nuclear physics for modeling electromagnetic interactions in UPCs, where the nuclei do not undergo hadronic interaction. The core idea of the EPA is to represent the time-varying Coulomb field of a relativistically moving nucleus as a flux of virtual or real photons with a broad, continuous energy spectrum. 
+This approach, first introduced by Fermi, and later formalized by Weizsäcker and Williams \cite{pshenichnov_electromagnetic_2011} treats the field of an accelerated nucleus as an effective photon flux, allowing one to describe the interaction of a target nucleus with this ``photon field'' in a manner analogous to photon absorption by a stationary target.
+
+The formalism imposes that the transverse photon flux produced by the relativistic nucleus can be described by equivalent, linearly polarized virtual photons, where the number of photons is given by \cite{klein_photonuclear_2020}:
+
+\begin{equation}\label{eq:epa_general}
+N(k,b) = \frac{ \alpha Z^2 k^2}{\pi^2\gamma^2\hbar^2\beta^2}\left( K_1^2(x) + \frac{K_0^2(x)}{\gamma^2} \right) \,,
+\end{equation}
+
+where Z is the atomic number, $\alpha$ is the fine structure constant, $\gamma$ and $\beta$ are the Lorentz boost and velocity respectively. $K_0$ and $K_1$ are the Bessel functions  and 
+$x = kb / $ $ \beta \gamma \hbar c $ , where b is the impact parameter. The $k_{T}$ spectrum of these photons is given by:
+
+\begin{equation}\label{eq:epa_kt_spectrum}
+    \frac{d^2 N}{d^2 k_T} = \frac{\alpha Z^2}{\pi^2} \frac{F(k_T^2 + k_z^2/\gamma^2)}{(k_T^2 + k_z^2/\gamma^2)^2} k_T^2 \,,
+\end{equation}
+
+where this equation was obtained by integrating over all possible values of b. Requiring coherent photon emission from the nucleus (i.e dipole-dominant contribution $Q^2R^2 \leq 1$) implies that photons emitted from nuclear target are quasi-real and not virtual as usually seen when assessing $e^{+}e^{-}$ colliders. This framework allows us to discuss the interactions of the photon flux from one nucleus with another in terms of equivalent photons that can be interpreted in Feynman diagrams.

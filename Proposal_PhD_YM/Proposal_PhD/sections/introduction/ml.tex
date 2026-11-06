@@ -1,0 +1,38 @@
+Deep learning is a specific branch of machine learning dealing with neural architectures that contain many layers, often dozens or hundreds. This then allows them to learn hierarchical, high‑level representations directly from raw data. Deep learning has exploded in recent years, with the advent of powerful GPUs, high performance computing clusters, and open‑source software ecosystems such as  PyTorch \cite{paszke_pytorch_2019}, which enable rapid experimentation and scalable training across terabytes of data. In HEP, there have been many exciting breakthroughs,ranging from sophisticated jet‑flavor taggers \cite{duperrin_flavour_2023} and track‑reconstruction networks \cite{biscarat_towards_2021} to generative models that accelerate detector simulation \cite{hariri_graph_2021}.
+
+\subsection{Neural network fundamentals}
+A neural network is a directed acyclic graph whose nodes (neurons) compute weighted sums of their inputs followed by a non‑linear activation function $\sigma$. These activation functions are important in order to add non-linearity to the model, which allows it to model complex patterns. Usually, one can think of neural networks in terms of layers of processing, where the first layer in the model is usually referred to as the input layer, the last one as the output layer, and all the layers in-between are hidden-layers. Each layer operation (and output A) can be viewed by the following function (when considering fully connected networks):
+
+\begin{equation}
+	A = \sigma(Wx+b)\,,
+\end{equation}
+where x is a vector of inputs from previous neurons, W is the weight assigned to each neuron in the layer, and b is a bias one can introduce into the model. This linear calculation then passes through the activation function $\sigma$ to generate the nonlinear output A.
+
+\subsection{Depth and hierarchical feature extraction}
+
+Depth refers to stacking many such layers. Each successive layer can learn higher‑level features that combine lower‑level patterns: In image tasks, early layers detect edges; later ones capture textures or object parts. This allows deep networks to model complex, non‑linear relationships without explicitly engineering hand‑crafted features. Theoretically, one can generate a single layer that can learn as well as any complex deep network (Universality approximation theorem), however, in practice with the compute power available, much better results are achieved by deep models.
+
+\subsection{Training via back propagation and stochastic gradient descent}
+
+Training a deep network means adjusting all weights so that the loss is minimized on the training data. A common way of doing that is via the backpropagation algorithm. This algorithm computes gradients of the loss with respect to every weight by applying the chain rule in reverse order through the network. These gradients are then used by an optimizer (commonly variants of stochastic gradient descent (SGD), e.g., Adam or RMSProp) to update weights.
+
+\subsection{Regularization, generalization, and overfitting}
+Deep models can contain millions of parameters; without constraints they can perfectly memorize training data (overfit). Regularization techniques help to mitigate this and allow the model to generalize better:
+
+\begin{description}
+    \item [Dropout] This technique disables connections between neurons during the training phase, thus breaking learned connections and forces the model to find alternative paths, which leads to better generalization.
+    \item [L1 Regularization] also called LASSO - Least Absolute Shrinkage and Selection Operator, L1 regularization refers to performing the typical L1 metric on all the weights in the model:
+    \begin{equation}
+    	\mathcal{L}_{L1} = \sum_L\sum_i|w_{L,i}|\,, 
+    \end{equation}
+     where L is the layer number and i is the weight within the layer. This regularization promotes the use of small weights and drives insignificant weights to zero, thus making the model more sparse and less prone to over-fitting.
+    \item [Weight Decay] Similar to the previous one, weight decay is done by applying the L2 norm to the model weights. This causes the model to penalize high-value weights; however it will not actively promote sparsity in the model.
+\end{description}
+
+\subsection{Architectural families}
+\begin{description}
+    \item [Dense Neural Network (DNN)] DNNs are one of the most primitive but usually useful neural networks. In DNNs All the nodes of adjacent layers are connected to each other, allowing each node to adjust its weight based on all the inputs to the layer. This model type is still very useful when used in classifiers and is also used to some degree in more advanced models such as auto encoders.
+    \item [Convolutional Neural Network (CNN)] CNNs are a type of model which is mostly used with image data. The input image is applied sequentially on the various filters of the layer, in a manner similar to a sliding window. The values of the elements in the filter matrices evolve with the training of the model and produce a representation of information embedded in the image. The output of these filters is then flattened to a latent space which is pushed into a DNN classifier in order to produce the final logits.
+    \item [Residual Neural Network (ResNet)] ResNet is a technology built in 2015 on top of CNNs \cite{he_deep_2015}. The main issue which can happen with both DNNs and CNNs is diminishing gradients in the calculation, in which the gradients zero out in a layer, thus not being able to propagate the calculation correctly over the graph. ResNet implements residual connections that bypass certain layers, and as a result can continue to propagate the information through the graph even if one layer zero out the gradients.
+\end{description}
+

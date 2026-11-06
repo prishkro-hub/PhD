@@ -1,0 +1,39 @@
+Jets, in the most abstract sense are a collection of multiple detector measurements, usually energy clusters but tracks may be used as well, confined to a predetermined radius within the detector $\eta-\phi$ plane. The definition of jet therefore depends on the specific jet algorithm in question and the choice of parameters when applying the algorithm to data. Jets are used to account for complexities which arise from the interplay between quarks and gluons when hadronization occurs, as described above. To be more precise, jets are proxies to the collimated partons produced in the interaction. In general, there are a few types of jets used in ATLAS analysis:
+
+\begin{description}
+\item [EM Topo Jets] Jets created only from calorimeter energy deposits. These jets have timing information from the calorimeter, as well as accounting for photons as constituents of the jets. 
+\item [Particle Flow Jets] These jets are created using a more complex algorithm which also adds track information to the forming of the jet. However, the resulting time resolution of these jets is poor compared to topojets, and as such operations required on jet timing are worse off with these kinds of jets.
+\end{description}
+
+\begin{figure}[h!] 
+    \centering % Centers the image and caption
+    \includegraphics[width=0.8\textwidth]{\main/illustrations/Monojet_2017_event_display_black.png}
+    \caption{Event display of a monojet event and its associated tracks and clusters in ATLAS \cite{collaboration_atlas_2020}. Tracks are seen as orange lines and calorimeter energy is seen as green (EM) and yellow (HAD) boxes, with size proportional to energy deposit. }
+    \label{fig:jet_in_atlas}
+\end{figure}
+
+The main algorithm currently used to define jets is the anti-$k_T$ algorithm \cite{cacciari_anti-k_t_2008}. the main idea behind the algorithm is to combine cluster deposits based on the negative power of the energy scale (hence anti-$k_T$), which makes the clusters generated have defined, cone-like boundaries. The process runs iteratively on clusters and pseudo-clusters (clusters which were already formed by previous iterations) up until a defined radius for the cone is reached (one of the more prominent selections is R=0.4). Then the constituents of the jet are charged tracks and clusters in which $\Delta R \leq 0.4$, where
+\begin{equation}
+	\Delta R = \sqrt{\Delta\eta^2 + \Delta\phi^2}\,,
+\end{equation} 
+\noindent with $\Delta\eta$ ,$\Delta\phi$ being the distances between the jet center and the constituent.
+
+
+\subsubsection{Jet System Kinematic Variables}
+As part of the analysis, there are a few observables of the jet system as a whole which are of interest in UPC studies: $H_T$, $M_{jets}$ and $y_{jets}$ which their definitions are given in the following equations: 
+\begin{equation}
+	H_{T} = \sum_{i} p_{T,i} \,,
+\end{equation}  
+	
+\begin{equation}
+	M_{jets}^2  = \left(\sum_j E_j\right)^2 - \left(\sum_j \mathbf{p}_j\right)^2 \,,
+\end{equation}
+
+\begin{equation}
+	y_{jets} = \frac{1}{2}ln\left(\frac{\sum_j E_j +p_{z,j}}{\sum_j E_j -p_{z,j}}\right).
+\end{equation}
+
+$H_T$ is the scalar sum of the $p_T$ of the jets, while $M_{jets}$ and $y_{jets}$ are the invariant mass and rapidity of the entire collection of jets.
+
+
+

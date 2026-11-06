@@ -1,0 +1,121 @@
+\documentclass[a4paper,12pt,reqno]{article}
+\providecommand{\main}{.} 
+\usepackage{graphicx} % Required for inserting images
+\usepackage{lineno}
+%\linenumbers
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{xspace}
+\usepackage{booktabs}
+\usepackage[table]{xcolor}
+\usepackage{array}
+\usepackage{atlasheavyion}
+\usepackage{atlasunit}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{comment}
+\usepackage{physics}
+\usepackage[breaklinks]{hyperref}
+\usepackage[para,online,flushleft]{threeparttable}
+\usepackage[
+backend=biber,
+style=numeric,
+sorting=none
+]{biblatex}
+ \usepackage{float} 
+ \usepackage{svg}
+\usepackage{geometry}
+
+\geometry{
+	left=2cm,
+	right=2cm,
+	bottom=3cm
+}
+\addbibresource{bibliography.bib}
+\DeclareUnicodeCharacter{2212}{-}
+\DeclareUnicodeCharacter{2223}{|}
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+
+\begin{document}
+
+
+\include{Main_pages/cover_page}
+\pagenumbering{gobble}
+
+\include{Main_pages/title_page}
+\section*{Abstract}
+\label{section: Abstract}
+\input{Abstract}
+
+
+\newpage
+\pagenumbering{roman}
+
+\tableofcontents
+\listoffigures
+%\listoftables
+\newpage
+	\pagenumbering{arabic}
+
+% Add page insertions here
+
+\part{Introduction}
+\input{sections/introduction/outline.tex}
+\section{The Standard Model and Quantum Chromodynamics}\label{sec:standard model}
+\input{sections/introduction/standard_model.tex}
+%\section{}\label{sec:QCD}
+%\input{sections/introduction/color.tex}
+\subsection{Pomeron}\label{sec:pomeron}
+\input{sections/introduction/pomeron.tex}
+\section{Photon Interactions}\label{sec:photon interaction}
+\input{sections/introduction/preamble_to_photon_interaction.tex}
+\subsection{Collision Kinematics}
+\input{sections/introduction/collision_kinematics.tex}
+\subsection{Equivalent Photon Approximation}\label{sec:EPA}
+\input{sections/introduction/epa.tex}
+\subsection{Electromagnetic Dissociation}\label{sec:EMD}
+\input{sections/introduction/emd.tex}
+\input{sections/introduction/photon_interactions.tex}
+\section{Heavy Ion Collisions}\label{sec:HI}
+\input{sections/introduction/hi_collisions.tex}
+\subsection{Large Hadron Collider}\label{sec:LHC}
+\input{sections/introduction/lhc.tex}
+\subsection{The ATLAS Experiment}\label{sec:atlas}
+\input{sections/introduction/atlas.tex}
+\subsection{Jets}\label{sec:reco_jet}
+\input{sections/introduction/jets.tex}
+\subsection{Ultra Peripheral Collisions}\label{sec:UPC}
+\input{sections/introduction/upc.tex}
+\section{Deep Learning}\label{sec:ML}
+\input{sections/introduction/ml.tex}
+\section{Previous Analysis}\label{sec:previous}
+\input{sections/introduction/0nXn_ana.tex}
+\section{Current Analysis}\label{sec:current}
+\input{sections/introduction/0n0n_ana.tex}
+
+\pagebreak
+
+\part{Analysis and Results}
+\input{sections/methods/outline.tex}
+\section{Event Selection}\label{sec:event_selection}
+\input{sections/methods/event_selections.tex}
+\section{Estimating Photon Direction}\label{sec:photon_direction_methods}
+\input{sections/methods/photon_direction.tex}
+\section{Analysis Through Event Topology}\label{sec:event_topology_ml}
+\input{sections/methods/topology_classification.tex}
+\section{Results}
+\subsection{Photon Direction}\label{sec:res_photon_direction}
+\input{sections/results/photon_direction.tex}
+\subsection{UPC Process Discrimination}\label{sec:res_sample_discrimination}
+\input{sections/results/process_discrimination.tex}
+
+\pagebreak
+
+\part{Follow up research}
+\input{sections/proposal/outline.tex}
+
+\pagebreak
+\printbibliography
+\end{document}

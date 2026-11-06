@@ -1,0 +1,61 @@
+The ATLAS (A Toroidal LHC Apparatus ) Detector is one of the four major experiments in the LHC, situated at IP1. The detector is a general purpose detector for High Energy Physics (HEP), comprised of a main barrel, endcaps, and forward detectors.
+The main barrel has the inner detector (ID) tracking layers (pixel, SCT, TRT), calorimeter layers, and dedicated muon detection layers.
+
+
+\begin{figure}[h!] 
+    \centering % Centers the image and caption
+    \includegraphics[width=0.8\textwidth]{\main/illustrations/atlas_id.png}
+    \caption{Cut-away view of the ATLAS ID, which is designed to provide a high-precision reconstruction of charged-particle trajectories. The ID covers the pseudo-rapidity range $|\eta|  < 2.5$  and has full coverage in $\phi$. It consists of a silicon Pixel detector at the innermost radii surrounded by a silicon microstrip detector (SCT) and a straw-tube detector, the TRT, that combines continuous tracking capabilities with particle identification based on transition radiation \cite{aad_atlas_2024}.}
+    \label{fig:atlas_detector_id}
+\end{figure}
+
+\begin{figure}[h!] 
+    \centering % Centers the image and caption
+    \includegraphics[width=0.8\textwidth]{\main/illustrations/atlas_cal.png}
+    \caption{Cut-away view of the ATLAS calorimeter system that measures the energies and positions of charged and neutral particles through interleaved absorber and active layers out to $|\eta| < 4.9$. LAr is used as the active medium for the electromagnetic calorimeters and all of the endcap and forward calorimeters; scintillating Tiles are used for hadron calorimetry in the central region.\cite{aad_atlas_2024}}
+    \label{fig:atlas_detector_cal}
+\end{figure}
+
+The lab coordinate system of ATLAS has its origin in the IP, with the z axis pointing along the beam axis towards IP2, and the x axis pointing towards the center of the LHC ring. Usually, the coordinate system used in the experiment is not the Cartesian system, but a somewhat Lorentz invariant system defined as follows:
+Taking a cylindrical coordinate along the beam axis (z is pointing in the same direction as the Cartesian case), we define the pseudo rapidity as the following:
+
+\begin{equation}\label{eq:def:pseudo_rapidity}
+  \eta = -ln\left( tan\left(\frac{\theta}{2}\right) \right) = \frac{1}{2}ln\left(\frac{|\textbf{P}| + P_{z}}{|\textbf{P}| - P_{z}}\right).
+\end{equation}
+
+Therefore, the difference $\Delta \eta$ is Lorentz-invariant, which makes it easy to perform calculations.
+
+\subsubsection{The Barrel Detector}
+As mentioned, the barrel detector wraps around the IP, and therefore is able to provide an almost full geometric coverage for the outgoing particles in the event. It is convenient to separate it into three different sections based on function:
+
+\begin{description}
+	\item [Tracking] The tracking layers are responsible for reconstructing charged particle trajectories close to the IP. This is done by an array of silicon pixels (pixel detector), silicon strips (Semiconductor Tracker (SCT)) and  argon mixture drift tubes (Transition Radiation Tracker (TRT)). These detectors sit inside a 2T solenoid magnet, bending the particle trajectory of charged particles, allowing for momenta reconstruction. It is essential that the particles interacting with the tracking layers leave minimal energy deposit in it, in order to not affect the momentum and energy of the particle.
+	
+	\item [Calorimetry] The calorimetry layers are designed to stop particles inside the active area, while converting the energy into a signal. The first layer past the tracker is the electromagnetic calorimeter (also known as the LAr calorimeter), followed by the hadronic calorimeter (Tile Calorimeter). The principle of operation is to use high Z material to create showers of particles inside the LAr. Then the charged particles from the showers produce current proportional to the energy of the initial particle, which is then read out. The Tile Calorimeter works in the same way, but instead of LAr, plastic scintillators are used to measure the energy of showers not stopped in the LAr. The Tile Calorimeter has a gap at $\eta \approx \pm 1.7$ due to the geometry and construction of the scintillators, and has to be accounted for in the analysis.
+	
+	\item [Muon Detectors] The muon detectors are a set of spectrometers outside the calorimeters.  Muons have a small interaction cross-section and above ~2 GeV they will not be stopped in the ID or calorimetry, whereas other observable particles typically are.  Thus the particle measured in the muon detectors are largely identified as muons.
+	These sub-detectors are able to provide tracking as well as timing information regarding the muons. 
+\end{description}
+  
+
+\subsubsection{The Forward Region}
+
+\begin{description}
+	\item [Zero Degree Calorimeter (ZDC)]\label{sec:zdc} The ZDC is a detector placed 140m away from the IP in both directions, and sits inside the Target Absorber for Neutrals (TAN). Following its name, it measures particles moving at around zero degrees with respect to the beam line, which, given the beam line magnets, will be neutral particles, specifically neutrons and photons. The ZDC is a calorimeter, built using alternating layers of tungsten (W) and fused silica/quartz rods. When a particle interacts with the tungsten, it creates a shower of particles,some of them charged. the charged particles propagate through the rods, and due to their momenta and index of refraction, produce Cherenkov light inside the rods. Through total internal reflection, the Cherenkov light is then propagated through the rods to photomultiplier tubes (PMTs) which convert the photons into electric signals which are then read out. Although the ZDC can measure photons, its main role is in counting spectator neutrons. As the energy of a single  spectator neutron is the beam energy, one can use the energy deposit in the ZDC to reconstruct how many spectator neutrons were present on each side of the collision in the event.
+	
+	\begin{figure}[h!] 
+	\centering % Centers the image and caption
+	\includegraphics[width=0.6\textwidth]{\main/figures/ATL-COM-FWD-2023-032_Fig_5.pdf}
+	\caption{The distribution of energies, expressed in terms of number of neutrons, in the A and C sides of the ZDC for events having at least 1 neutron on each side. The 1, 2, 3, and 4 neutron peaks can be seen as well as a large enhancement at ~40 neutrons arising from Pb+Pb collision geometry and the physics of (charged) nuclear cluster formation which reduces the neutron yield in peripheral collisions \cite{cole_zero_2023}. }
+	\label{fig:atlas_zdc_2023}
+    \end{figure}
+	
+	
+	
+\end{description}
+
+
+
+
+
+
