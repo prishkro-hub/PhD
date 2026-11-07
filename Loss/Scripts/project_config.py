@@ -7,6 +7,7 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 ACTIVE_MATERIAL = "Al-Al2O3"
 ACTIVE_RES = "Res_1"
 ACTIVE_VOLTAGE = "5V"
+ACTIVE_SPATIAL_MODE = "uniform"
 
 # Hardware / Physics parameters tied to specific resonators
 RESONATOR_SPECS = {
@@ -36,14 +37,14 @@ RESONATOR_SPECS = {
     },
 }
 
-def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE):
+def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=ACTIVE_SPATIAL_MODE):
     """Dynamically builds all Data and Output paths for a specific combination."""
 
-    # 1. Raw Data Paths (Read-Only)
+    # 1. Base Paths
     data_dir = ROOT_DIR / "Data" / mat / res / volt
+    out_base = ROOT_DIR / "Outputs" / mat / res / volt
 
     # 2. Output Paths (Compute & Fit)
-    out_base = ROOT_DIR / "Outputs" / mat / res / volt
     comp_dir = out_base / "Compute"
     fit_dir = out_base / "Fit"
 
@@ -57,16 +58,26 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE):
     return {
         "spec": RESONATOR_SPECS[mat][res],
         "V_bias": v_bias,
+        "spatial_mode": spatial,
 
-        # Files
+        # Data & Grids (Read-Only inputs)
+        "data_dir": data_dir,
         "raw_csv": data_dir / f"resonator_data_{volt}.csv",
         "spatial_npz": data_dir / "hfss_spatial_data.npz",
-        "processd_csv": comp_dir / "processed_compute.csv",
-        "tau_chain": fit_dir / "tau_fit.csv",
-        "s_chain": fit_dir / "s_fit.csv",
+        "tau_grid": data_dir / f"loss_grid_tau_{spatial}.npz",
+        "s_grid": data_dir / f"loss_grid_S_{spatial}.npz",
 
-        # Directories
+
+        # Computed Outputs & Chains
         "comp_dir": comp_dir,
         "fit_dir": fit_dir,
+        "processed_csv": comp_dir / "processed_compute.csv",
+
+        "tau_backend": fit_dir / f"tau_fit_{spatial}.h5",
+        "tau_chain": fit_dir / f"tau_fit_{spatial}.csv",
+
+        "s_backend": fit_dir / f"S_fit_{spatial}.h5",
+        "s_chain": fit_dir / f"S_fit_{spatial}.csv",
+
         "comparison_dir": ROOT_DIR / "Outputs" / mat / res / "Comparisons"
     }

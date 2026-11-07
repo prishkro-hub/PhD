@@ -12,20 +12,22 @@ from schwimmbad import MPIPool
 # =====================================
 # 1. DIRECTORY & CONFIGURATION
 # =====================================
-# Inject the root 'Scripts' directory into Python's path
+# Inject the root 'Scripts' directory into Python's path and import the config
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from project_config import get_paths
 
-# Fetch paths for the currently active pipeline
+# Fetch paths for the currently active route
 cfg = get_paths()
+
 DATA_DIR = cfg["data_dir"]
 FIT_DIR = cfg["fit_dir"]
+SPATIAL_MODE = cfg["spatial_mode"]
 
-SPATIAL_MODE = "uniform"  # Match the mode built by the grid builder!
-GRID_FILE = DATA_DIR / f"S_loss_grid_{SPATIAL_MODE}.npz"
+GRID_FILE = cfg["s_grid"]
 
-BACKEND_FILE = FIT_DIR / f"S_loss_fit_{SPATIAL_MODE}.h5"
-CSV_CHAIN_FILE = FIT_DIR / f"S_loss_fit_{SPATIAL_MODE}.csv"
+# Outputs
+BACKEND_FILE = cfg["s_backend"]
+CSV_CHAIN_FILE = cfg["s_chain"]
 
 # Select high-power curve where S-TLSs saturate to LZ scaling
 PWR_MIN_DBM = -25.0
@@ -245,4 +247,4 @@ if __name__ == "__main__":
             "log_prob": flat_probs
         })
         df_out.to_csv(CSV_CHAIN_FILE, index=False)
-        print(f"--- S-LOSS FIT COMPLETE | Saved HDF5 & CSV to {OUTPUT_DIR} ---", flush=True)
+        print(f"--- S-LOSS FIT COMPLETE | Saved HDF5 & CSV to {FIT_DIR} ---", flush=True)
