@@ -1,3 +1,4 @@
+import sys
 import os
 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
@@ -14,20 +15,31 @@ except ImportError:
     print("Warning: 'corner' module not found. Run 'pip install corner' for contour plots.")
     CORNER_AVAILABLE = False
 
-# --- Configuration ---
-SCRIPT_DIR = Path(__file__).resolve().parent
-OUTPUTS_BASE = SCRIPT_DIR.parent / "Outputs"
-OUTPUT_DIR = OUTPUTS_BASE / "Fits"
-PLOTS_DIR = OUTPUT_DIR / "Plots"
+# =====================================
+# 1. DIRECTORY & CONFIGURATION
+# =====================================
+# Inject the root 'Scripts' directory into Python's path and import the config
+SCRIPTS_DIR = Path(__file__).parents[1] / "Scripts"
+sys.path.insert(0, str(SCRIPTS_DIR))
+from project_config import get_paths
 
-CHAIN_FILE = OUTPUT_DIR / "S_loss_fit_uniform.csv"
-PLOT_PREFIX = "S_uni"
+# Fetch paths for the currently active route
+cfg = get_paths()
+FIT_DIR = cfg["fit_dir"]
+PLOTS_DIR = FIT_DIR / "Plots"
+SPATIAL_MODE = cfg["spatial_mode"]
+
+CHAIN_FILE = cfg["s_chain"]
+PLOT_PREFIX = f"S_{SPATIAL_MODE}"
 
 N_WALKERS = 32
 NDIM = 3
 MANUAL_CUT = 800
 MIN_BURN_IN = 500  # Increased for a 10000-step MCMC run
 
+# =====================================
+# 2. WEED OUT STRAGGLERS
+# =====================================
 def detect_straggler_burnin(chain, buffer_steps=100, mad_Limit=6.0):
     """
     Scans active walkers to find the last step where any walker was still traveling
@@ -58,7 +70,9 @@ def detect_straggler_burnin(chain, buffer_steps=100, mad_Limit=6.0):
 MAX_DELTA_LOGPROB = 25.0  # Reject walkers with median log_prob > 25 below best walker
 MAD_THRESHOLD = 5.0       # Reject walkers > 5 MAD away from ensemble median
 
-
+# =====================================
+# 3. LOAD CHAIN / BACKEND FOR ANALYSIS
+# =====================================
 def load_chain_data(chain_path, n_walkers=32, ndim=3):
     """
     Loads 3D chain (n_steps, n_walkers, ndim) and 2D log_probs (n_steps, n_walkers)
@@ -90,7 +104,9 @@ def load_chain_data(chain_path, n_walkers=32, ndim=3):
     print(f"Successfully loaded CSV data from {chain_path.name} | Shape: {chain.shape}")
     return chain, log_probs
 
-
+# =====================================
+# 4. PRUNE EVEN MORE STUCK WALKERS
+# =====================================
 def prune_stuck_walkers(chain, log_probs, max_delta_lp=25.0, mad_thresh=5.0):
     """
     Identifies and removes stranded walkers along axis=1 using median log-probability
@@ -127,12 +143,14 @@ def prune_stuck_walkers(chain, log_probs, max_delta_lp=25.0, mad_thresh=5.0):
 
     return chain[:, good_mask, :], log_probs[:, good_mask]
 
-
+# =====================================
+# 5. RUN THE ACTUAL ANALYSIS
+# =====================================
 def analyze_bloch_fit():
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     print(f"\n{'='*50}\nANALYZING STEP 3 FIT ({CHAIN_FILE})\n{'='*50}")
 
-    chain_file = OUTPUT_DIR / CHAIN_FILE
+    chain_file = CHAIN_FILE
     chain, log_probs = load_chain_data(chain_file, N_WALKERS, NDIM)
     if chain is None:
         return None
@@ -300,13 +318,15 @@ def analyze_bloch_fit():
 
     return pd.DataFrame(summary_data)
 
-
+# =====================================
+# 6. EXECUTION BLOCK
+# =====================================
 if __name__ == "__main__":
     df_summary = analyze_bloch_fit()
 
     if df_summary is not None:
         print(f"\n{'='*50}\nCOMPILING SUMMARY TABLE\n{'='*50}")
-        summary_path = OUTPUT_DIR / f"Best_Parameters_{PLOT_PREFIX}.csv"
+        summary_path = FIT_DIR / f"Best_Parameters_{PLOT_PREFIX}.csv"
         df_summary.to_csv(summary_path, index=False)
         print(df_summary.to_string(index=False))
         print(f"\nSaved summary to: {summary_path}")

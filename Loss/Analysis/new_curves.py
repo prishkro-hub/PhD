@@ -5,13 +5,24 @@ from matplotlib import cm
 import matplotlib.colors as mcolors
 from pathlib import Path
 
-# Filepath Configuration
-SCRIPT_DIR = Path(__file__).resolve().parent
-OUTPUT_DIR = SCRIPT_DIR.parent / "Outputs" / "Computes"
-DATAFILE = OUTPUT_DIR / "S_compute.csv"
-# DATAFILE = SCRIPT_DIR.parent / "Data" / "New" / "res6978__bias5V_powersweep_Dec4.csv" #"5umGapRes_6789MHz_data" / "resonator_data_5V.csv"
-ALL_PLOTFILE = OUTPUT_DIR / "Loss_Plot.png"
-S_PLOTFILE = OUTPUT_DIR / "S_Loss_Plot.png"
+# =====================================
+# 1. DIRECTORY & CONFIGURATION
+# =====================================
+# Inject the root 'Scripts' directory into Python's path and import the config
+SCRIPTS_DIR = Path(__file__).parents[1] / "Scripts"
+sys.path.insert(0, str(SCRIPTS_DIR))
+from project_config import get_paths
+
+# Fetch paths for the currently active route
+cfg = get_paths()
+COMP_DIR = cfg["comp_dir"]
+PLOTS_DIR = COMP_DIR / "Plots"
+SPATIAL_MODE = cfg["spatial_mode"]
+
+DATAFILE = COMP_DIR / "S_compute.csv"
+
+ALL_PLOTFILE = PLOTS_DIR / "Loss_Plot.png"
+S_PLOTFILE = PLOTS_DIR / "S_Loss_Plot.png"
 
 def _regime_stats(res_ppm, y_exp_ppm, global_range_ppm):
     rmse = float(np.sqrt(np.mean(res_ppm ** 2)))

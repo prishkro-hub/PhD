@@ -1,7 +1,7 @@
 #!/bin/bash
 #$ -S /bin/bash
 #$ -cwd
-#$ -N TanS_Fit
+#$ -N Tan_S0_Fit
 #$ -q smoshe.q
 #$ -pe shared 65
 #$ -l h_vmem=16G
@@ -9,8 +9,8 @@
 #$ -e /dev/null
 
 # 1. Setup Logs
-LOGS="Labber/Yaniv/Logs/Fits"
-OUTPUTS="Labber/Yaniv/Outputs/Fits"
+LOGS="Loss/Logs/Fits"
+OUTPUTS="Loss/Outputs/Fits"
 mkdir -p ${LOGS}
 
 # 2. Initialize Conda
@@ -35,11 +35,11 @@ export OMPI_MCA_btl="^openib,ofi"
 export OMPI_MCA_mtl="^ofi"
 
 # 6. Define Specific Output Logs
-LOG_FILE="${LOGS}/TanS_Fit.log"
+LOG_FILE="${LOGS}/Tan_S0_Fit.log"
 
 echo "--- JOB STARTING AT $(date) ON HOST $HOSTNAME ---" > $LOG_FILE
 
 # 6. Execute with MPI
-mpirun -np 33 --bind-to none python -u Labber/Yaniv/Scripts/Fits/intrinsic_fit.py >> $LOG_FILE 2>&1
+mpirun -np 33 --bind-to none python -u Loss/Scripts/Fits/tan_S0_fit.py >> $LOG_FILE 2>&1
 
 echo "--- JOB FINISHED AT $(date) ---" >> $LOG_FILE

@@ -1,13 +1,22 @@
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-# --- Load Data ---
-YANIV_DIR = Path(__file__).resolve().parents[1]
-DATA_DIR = YANIV_DIR / "Data" / "New" / "6978MHzRes_5Vbias" / "share"
-OUTPUT_DIR = YANIV_DIR / "Outputs"
+# =====================================
+# 1. DIRECTORY & CONFIGURATION
+# =====================================
+# Inject the root 'Scripts' directory into Python's path and import the config
+SCRIPTS_DIR = Path(__file__).parents[1] / "Scripts"
+sys.path.insert(0, str(SCRIPTS_DIR))
+from project_config import get_paths
 
-spatial_data = np.load(DATA_DIR / 'hfss_spatial_data.npz')
+# Fetch paths for the currently active route
+cfg = get_paths()
+FIT_DIR = cfg["fit_dir"]
+PLOTS_DIR = FIT_DIR / "Plots"
+
+spatial_data = np.load(cfg["spatial_npz"])
 E_k = spatial_data['E_k']
 W_k = spatial_data['W_k']
 E_mean = float(spatial_data['E_mean'])

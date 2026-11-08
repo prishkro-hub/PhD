@@ -20,7 +20,8 @@ DATA_DIR = cfg["data_dir"]
 FIT_DIR = cfg["fit_dir"]
 
 INPUT_FILE = cfg["raw_csv"]
-BACKEND_FILE = FIT_DIR / "tan0_fit.h5"
+BACKEND_FILE = FIT_DIR / "tan_0_fit.h5"
+CHAIN_FILE = FIT_DIR / "tan_0_fit.csv"
 
 # --- Get Spatial Field Data from 2D HFSS ---
 spatial_data = cfg["spatial_npz"]

@@ -6,7 +6,9 @@
         "**/.jj": true,
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
-        "Loss_Tangent": true,
-        "Freq_Shift": true
+        "Loss": true,
+        "Shift": true,
+        "Beaurocracy": true,
+        "Proposal_PhD_YM": true
     }
 }

@@ -4,36 +4,36 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
 # Global variables controlling the active pipeline target
-ACTIVE_MATERIAL = "Al-Al2O3"
-ACTIVE_RES = "Res_1"
+ACTIVE_MATERIAL = "Al-Sapp"
+ACTIVE_RES = "6789_MHz"
 ACTIVE_VOLTAGE = "5V"
 ACTIVE_SPATIAL_MODE = "uniform"
 
 # Hardware / Physics parameters tied to specific resonators
 RESONATOR_SPECS = {
     "Al-Al2O3": {
-        "Res_1": {"f0_MHz": 6637, "LS_um": 10.0},
-        "Res_2": {"f0_MHz": 6987, "LS_um": 5.0},
-        "Res_3": {"f0_MHz": 7524, "Ls_um": 3.0},
-        "Res_4": {"f0_MHz": 8037, "Ls_um": 2.0}
+        "6637_MHz": {"f0_GHz": 6.637, "LS_um": 10.0},
+        "6987_MHz": {"f0_GHz": 6.987, "LS_um": 5.0},
+        "7524_MHz": {"f0_GHz": 7.524, "LS_um": 3.0},
+        "8037_MHz": {"f0_GHz": 8.037, "LS_um": 2.0}
     },
     "Al-Sapp": {
-        "Res_1": {"f0_MHz": 6427, "LS_um": 10.0},
-        "Res_2": {"f0_MHz": 6789, "LS_um": 5.0},
-        "Res_3": {"f0_MHz": 7308, "Ls_um": 3.0},
-        "Res_4": {"f0_MHz": 7835, "Ls_um": 2.0}
+        "6427_MHz": {"f0_GHz": 6.427, "LS_um": 10.0},
+        "6789_MHz": {"f0_GHz": 6.789, "LS_um": 5.0},
+        "7308_MHz": {"f0_GHz": 7.308, "LS_um": 3.0},
+        "7835_MHz": {"f0_GHz": 7.835, "LS_um": 2.0}
     },
     "Ta-Nb-Sapp": {
-        "Res_1": {"f0_MHz": 6550, "LS_um": 10.0},
-        "Res_2": {"f0_MHz": 6939, "Ls_um": 2.0},
-        "Res_3": {"f0_MHz": 7506, "LS_um": 5.0},
-        "Res_4": {"f0_MHz": 8037, "Ls_um": 3.0}
+        "6550_MHz": {"f0_GHz": 6.550, "LS_um": 10.0},
+        "6939_MHz": {"f0_GHz": 6.939, "LS_um": 2.0},
+        "7506_MHz": {"f0_GHz": 7.506, "LS_um": 5.0},
+        "8037_MHz": {"f0_GHz": 8.037, "LS_um": 3.0}
     },
     "Ta-Sapp": {
-        "Res_1": {"f0_MHz": 6870, "LS_um": 10.0},
-        "Res_2": {"f0_MHz": 7411, "Ls_um": 2.0},
-        "Res_3": {"f0_MHz": 8022, "LS_um": 5.0},
-        "Res_4": {"f0_MHz": 8575, "Ls_um": 3.0}
+        "6870_MHz": {"f0_GHz": 6.870, "LS_um": 10.0},
+        "7411_MHz": {"f0_GHz": 7.411, "LS_um": 2.0},
+        "8022_MHz": {"f0_GHz": 8.022, "LS_um": 5.0},
+        "8575_MHz": {"f0_GHz": 8.575, "LS_um": 3.0}
     },
 }
 

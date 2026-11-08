@@ -22,7 +22,7 @@ cfg = get_paths()
 DATA_DIR = cfg["data_dir"]
 FIT_DIR = cfg["fit_dir"]
 
-INPUT_FILE = DATA_DIR / "processed_compute.csv"
+INPUT_FILE = cfg["processed_csv"]
 
 BACKEND_FILE = FIT_DIR / f"tan_s0_fit.h5"
 CSV_CHAIN_FILE = FIT_DIR / f"tan_s0_fit.csv"
