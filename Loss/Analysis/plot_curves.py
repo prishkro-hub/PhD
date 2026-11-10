@@ -87,7 +87,7 @@ def plot_curves_new(input_file):
         xi = subset['bias_frequency'] / subset['photon_number']
 
         if P >= -100:
-            plt.plot(xi, subset['loss_tangent']*1e6,
+            plt.plot(subset['photon_number'], subset['loss_tangent']*1e6,
                         color=colors[i], marker='o', label=f'{P} dBm: Exp')
             # plt.plot(subset_sorted['dE_dt']*1e-6, subset_sorted['y_tau']*1e5,
             #             color=colors[i], linestyle='--', label=rf'{P} dBm: $\tau$-TLS')
@@ -106,7 +106,7 @@ def plot_curves_new(input_file):
         plt.tick_params(labelsize=18)
 
     plt.tight_layout()
-    # plt.savefig(PLOTFILE, dpi=300)
+    plt.savefig(PLOTFILE, dpi=300)
     plt.show()
 
 if __name__ == "__main__":

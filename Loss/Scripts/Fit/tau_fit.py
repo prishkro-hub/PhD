@@ -28,8 +28,8 @@ GRID_FILE = cfg["tau_grid"]
 BACKEND_FILE = cfg["tau_backend"]
 CSV_CHAIN_FILE = cfg["tau_chain"]
 
-TAN0 = 8.6577e-6   # Times Initial Median A_val
-TAN_BG = 3.3573e-6
+TAN0 = 4.51e-6 #8.6577e-6
+TAN_BG = 0.0 #3.3573e-6
 
 # Set False for ignorant flat priors (recommended for spatial fits),
 # or True to apply the legacy Gaussian priors from the uniform fit.
