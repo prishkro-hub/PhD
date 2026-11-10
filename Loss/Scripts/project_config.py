@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # The root PhD/Loss directory
-ROOT_DIR = Path(__file__).resolve().parents[2]
+ROOT_DIR = Path(__file__).resolve().parents[1]
 
 # Global variables controlling the active pipeline target
 ACTIVE_MATERIAL = "Al-Sapp"
@@ -62,7 +62,7 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=
 
         # Data & Grids (Read-Only inputs)
         "data_dir": data_dir,
-        "raw_csv": data_dir / f"resonator_data_{volt}.csv",
+        "raw_csv": data_dir / f"resonator_data.csv",
         "spatial_npz": data_dir / "hfss_spatial_data.npz",
         "tau_grid": data_dir / f"loss_grid_tau_{spatial}.npz",
         "s_grid": data_dir / f"loss_grid_S_{spatial}.npz",
@@ -72,6 +72,7 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=
         "comp_dir": comp_dir,
         "fit_dir": fit_dir,
         "processed_csv": comp_dir / "processed_compute.csv",
+        "final_csv": comp_dir / "final_results.csv",
 
         "tau_backend": fit_dir / f"tau_fit_{spatial}.h5",
         "tau_chain": fit_dir / f"tau_fit_{spatial}.csv",
