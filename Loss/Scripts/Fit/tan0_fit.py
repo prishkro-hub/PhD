@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import time
+from scipy.stats import linregress
 from schwimmbad import MPIPool
 
 # =====================================
@@ -24,12 +25,13 @@ BACKEND_FILE = FIT_DIR / "tan_0_fit.h5"
 CHAIN_FILE = FIT_DIR / "tan_0_fit.csv"
 
 # --- Get Spatial Field Data from 2D HFSS ---
-spatial_data = cfg["spatial_npz"]
-E_k = spatial_data["E_k"]
-W_k = spatial_data["W_k"]
+spatial_data = np.load(cfg["spatial_npz"])
 E_mean = float(spatial_data["E_mean"])
 E_vac = float(spatial_data["E_vac"])
 V = 5
+
+# E_k = spatial_data["E_k"]
+# W_k = spatial_data["W_k"]
 
 # MCMC Hyperparameters
 N_DIM = 3
@@ -41,42 +43,62 @@ N_BATCH = 500
 # 2. Log Probability of Saturated + Background Loss
 # ==================================================
 def log_probability(theta, n_data, loss_data):
-    log_tan0, nc, log_tan_bg = theta
+    log_tan0, log_nc, log_tan_bg = theta
 
-    if not (-7.0 < log_tan0 < -2.0 and 1.0 < nc < 1e6 and -8.0 < log_tan_bg < -4.0):
+    if not (-7.0 < log_tan0 < -4.0 and 0.0 < log_nc < 6.0 and -8.0 < log_tan_bg < -4.0):
         return -np.inf
 
     tan0 = 10**log_tan0
+    nc = 10**log_nc
     tan_bg = 10**log_tan_bg
 
     model_loss = (tan0 / np.sqrt(1.0 + (n_data / nc))) + tan_bg
 
-    sigma = 1e-7
-    chi2 = ((loss_data - model_loss) / sigma) ** 2
+    sigma = 3e-7
+    chi2 = np.sum(((loss_data - model_loss) / sigma) ** 2)
 
-    log_prob = -0.5 * np.sum(chi2)
-
-    if np.isnan(log_prob) or not np.isfinite(log_prob):
+    if np.isnan(chi2) or not np.isfinite(chi2):
         return -np.inf
 
-    return log_prob
+    return -0.5 * chi2
 
 # ==================================================
 # 3. Load Data & Calculate Fields
 # ==================================================
-def load_data(filepath):
+def load_data(filepath, low_power_thresh=-55.0):
     df = pd.read_csv(filepath)
+    df.columns = df.columns.str.strip()
 
-    n_data = df['photon_number'].values
-    loss_data = df['loss_tangent'].values
-    nu = df['bias_frequency'].values
+    # 1. Find the tau-TLS regime
+    low_pwr = df[df['drive_power'] <= low_power_thresh]
+    y_low = low_pwr.groupby('bias_frequency')['loss_tangent'].mean().values * 1e6
+    nu_arr = np.sort(low_pwr['bias_frequency'].unique())
 
-    df['dE_dt'] = 2 * V * nu * E_mean
-    df['E_ac'] = E_vac * np.sqrt(n_data)
+    tau_baseline = np.mean(y_low[:3])
+    log_nu = np.log10(nu_arr)
+    log_y = np.log10(y_low)
+    slope, intercept, _, _, _ = linregress(log_nu[-4:], log_y[-4:])
 
-    valid_mask = np.isfinite(n_data) & np.isfinite(loss_data)
+    log_nu_cut = (np.log10(tau_baseline) - intercept) / slope
+    nu_cut = 10 ** log_nu_cut
 
-    return n_data[valid_mask], loss_data[valid_mask], df["dE_dt"][valid_mask], df["E_ac"][valid_mask]
+    print(f"Dynamically calculated tau-TLS cutoff: {nu_cut:.0f} Hz", flush=True)
+
+    # 1. Filter dataset
+    valid_mask = (
+        np.isfinite(df['photon_number'])
+        & np.isfinite(df['loss_tangent'])
+        & (df['bias_frequency'] <= nu_cut)
+    )
+
+    df_active = df[valid_mask].copy()
+
+    n_data = df_active['photon_number'].values
+    loss_data = df_active['loss_tangent'].values
+
+    print(f"Restricted fit to {len(loss_data)} slow-sweep data points.", flush=True)
+
+    return n_data, loss_data
 
 # ==================================================
 # 4. Execution Wrapper
@@ -87,16 +109,16 @@ if __name__ == "__main__":
             pool.wait()
             sys.exit(0)
 
-        print("--- STARTING TAN0 FIT FIT ---", flush=True)
+        print("--- STARTING TAN0 + BACKGROUND FIT ---", flush=True)
         print("MPI Pool successfully established! Starting Sampler...", flush=True)
 
-        n_data, loss_data, Edot, Eac = load_data(INPUT_FILE)
+        n_data, loss_data= load_data(INPUT_FILE)
 
         backend = emcee.backends.HDFBackend(str(BACKEND_FILE))
         backend.reset(N_WALKERS, N_DIM)
     
-        p0_center = np.array([-4.0, 10.0, -6.0])
-        jitter = np.array([0.5, 2.0, 0.5])
+        p0_center = np.array([-5.0, 2.3, -5.5])
+        jitter = np.array([0.05, 0.2, 0.05])
 
         p0, initial_time = [], time.time()
         for _ in range(N_WALKERS):
@@ -123,8 +145,9 @@ if __name__ == "__main__":
             N_WALKERS, N_DIM, log_probability,
             args=(n_data, loss_data),
             moves=[
-                (emcee.moves.StretchMove(a=3.0), 0.8),
-                (emcee.moves.DESnookerMove(), 0.2)
+                (emcee.moves.StretchMove(a=2.0), 0.7),
+                (emcee.moves.DEMove(), 0.2)
+                (emcee.moves.DESnookerMove(), 0.1)
             ],
             pool=pool,
             backend=backend
@@ -148,4 +171,9 @@ if __name__ == "__main__":
                   f"Time: {elapsed:.2f} mins", flush=True
             )
 
-    print(f"--- Intrinsic tau-Loss Fit COMPLETE | Saved HDF5 to {FIT_DIR} ---", flush=True)
+        # Save CSV for posterity
+        flat_samples = sampler.get_chain(discard=N_STEPS//4, flat=True)
+        df_out = pd.DataFrame(flat_samples, columns=["log_tan0", "log_nc", "log_tan_bg"])
+        df_out.to_csv(CHAIN_FILE, index=False)
+
+    print(f"--- Intrinsic tau-Loss Fit COMPLETE | Saved HDF5 & CSV to {FIT_DIR} ---", flush=True)
