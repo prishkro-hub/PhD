@@ -1,0 +1,4 @@
+Parameter,MAP (Best Fit),Median (Posterior),Error (-),Error (+),Units
+p_tau,34.2889,34.3699,0.9933,1.0258,D
+Gamma_1,1.0159e-01,1.5931e-01,4.4914e-02,1.0941e-01,MHz
+A_val,1.0181,1.0182,0.0027,0.0028,

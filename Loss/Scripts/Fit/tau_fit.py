@@ -28,8 +28,8 @@ GRID_FILE = cfg["tau_grid"]
 BACKEND_FILE = cfg["tau_backend"]
 CSV_CHAIN_FILE = cfg["tau_chain"]
 
-TAN0 = 1.0171e-5   # Times Initial Median A_val
-TAN_BG = 5.2350e-6
+TAN0 = 8.6577e-6   # Times Initial Median A_val
+TAN_BG = 3.3573e-6
 
 # Set False for ignorant flat priors (recommended for spatial fits),
 # or True to apply the legacy Gaussian priors from the uniform fit.
@@ -83,21 +83,20 @@ G_MIN, G_MAX = float(G_GRID[0]), float(G_GRID[-1])
 def log_probability(theta):
     p_val, log_k1_MHz, A_val = theta
     
-    if not (P_MIN <= p_val <= P_MAX and G_MIN < log_k1_MHz < G_MAX and 0.3 < A_val < 1.7):
+    if not (P_MIN <= p_val <= P_MAX and -1.0 < log_k1_MHz < G_MAX and 0.3 < A_val < 1.7):
         return -np.inf
 
     unit_loss = LOSS_SPLINE(np.array([[np.log10(p_val), log_k1_MHz]]))[0]
-    model = TAN_BG + (TAN0 - TAN_BG) * A_val * unit_loss
+    model = TAN_BG + TAN0 * A_val * unit_loss
 
     chi2 = np.sum(((LOSS_DATA - model) / SIGMA_DATA) ** 2)
     if np.isnan(chi2) or not np.isfinite(chi2):
         return -np.inf
 
     log_prob = -0.5 * chi2
-    log_prob += -0.5 * ((log_k1_MHz - 0.7) / 0.2) ** 2
     
     if USE_LEGACY_GAUSSIAN_PRIORS:
-        log_prob += -0.5 * ((p_val - 11.0) / 5.0) ** 2
+        log_prob += -0.5 * ((p_val - 18.0) / 2.0) ** 2
         log_prob += -0.5 * ((log_k1_MHz - 0.7) / 0.2) ** 2
         log_prob += -0.5 * ((A_val - 1.0) / 0.0018) ** 2
 
@@ -131,8 +130,9 @@ if __name__ == "__main__":
         sampler = emcee.EnsembleSampler(
             N_WALKERS, N_DIM, log_probability,
             moves=[
-                (emcee.moves.StretchMove(a=3.0), 0.8),
-                (emcee.moves.DESnookerMove(), 0.2)
+                (emcee.moves.StretchMove(a=4.0), 0.7),
+                (emcee.moves.DEMove(), 0.2),
+                (emcee.moves.DESnookerMove(), 0.1)
             ],
             pool=pool,
             backend=backend
@@ -178,4 +178,4 @@ if __name__ == "__main__":
             "log_prob": flat_probs
         })
         df_out.to_csv(CSV_CHAIN_FILE, index=False)
-        print(f"--- LOSS FIT COMPLETE | Saved HDF5 & CSV to {OUTPUT_DIR} ---", flush=True)
+        print(f"--- LOSS FIT COMPLETE | Saved HDF5 & CSV to {FIT_DIR} ---", flush=True)

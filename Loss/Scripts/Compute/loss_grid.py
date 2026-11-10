@@ -5,21 +5,24 @@ import time
 import numpy as np
 import numpy.polynomial.legendre as leg
 import pandas as pd
+from scipy.stats import linregress
 from numba import njit, prange
 from schwimmbad import MPIPool
 
 # =====================================
 # 1. DIRECTORY & MODE CONFIGURATION
 # =====================================
-CURRENT_DIR = Path(__file__).resolve().parent
-if (CURRENT_DIR / "hfss_spatial_data.npz").exists():
-    DATA_DIR = CURRENT_DIR
-elif (CURRENT_DIR.parent / "Data").exists():
-    DATA_DIR = CURRENT_DIR.parent / "Data" / "5umGapRes_6789MHz_data"
-else:
-    DATA_DIR = CURRENT_DIR.parents[2] / "Data" / "5umGapRes_6789MHz_data"
+SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SCRIPTS_DIR))
 
-INPUT_FILE = DATA_DIR / "resonator_data_5V.csv"
+from project_config import get_paths
+cfg = get_paths()
+
+DATA_DIR = cfg["data_dir"]
+SPATIAL_MODE = cfg["spatial_mode"]
+INPUT_FILE = cfg["raw_csv"]
+OUTPUT_FILE = cfg["tau_grid"]
+V_BIAS = float(cfg["V_bias"])
 
 # Spatial Integration Mode:
 #   "burin_log_pdf"  -> Step 3 (Analytical): P(r) ~ r^{-3} => flat weight in u = ln(r)
@@ -27,7 +30,7 @@ INPUT_FILE = DATA_DIR / "resonator_data_5V.csv"
 #   "burin_ac_only"  -> Step 2 (Analytical): P(r) ~ r^{-3}, Spatial AC (r_ac = r), Uniform DC
 #   "hfss_ac_only"        -> Step 2 (Empirical)   : Spatial AC (r_ac = r), Uniform DC (r_dc = 1, /sqrt(3))
 #   "uniform"        -> Step 1 (Uniform)   : Uniform AC/DC (r_ac = 1, r_dc = 1)
-SPATIAL_MODE = "uniform"
+SPATIAL_MODE = "burin_log_pdf"
 N_SPATIAL = 12
 N_GRID = 45
 
@@ -36,11 +39,9 @@ N_GRID = 45
 # =====================================
 DEBYE = 3.33564e-30
 HBAR = 1.054571817e-34
-V_BIAS = 5.0
 
 RABI_COEFF = (DEBYE / HBAR) * 1e-9          # Converts (p [D] * E_ac [v/m]) to GHz
 V_COEFF = (2.0 * DEBYE / HBAR) * 1e-18      # Converts (2 * p [D] * dE_dt [V/(m*s)]) to GHz^2
-TAU_CUTOFF_LOCAL = 1.698e9 * np.sqrt(3.0)
 
 NN = 100.0  # Stable cutoff
 SQRT_NN = np.sqrt(NN)
@@ -57,7 +58,7 @@ COS_U = np.cos(U_N)
 SIN2_U = SIN_U ** 2
 
 # Load HFSS spatial field data
-spatial_data = np.load(DATA_DIR / "hfss_spatial_data.npz")
+spatial_data = np.load(cfg["spatial_npz"])
 E_k = spatial_data["E_k"]
 W_k = spatial_data["W_k"]
 E_mean = float(spatial_data["E_mean"])
@@ -175,8 +176,7 @@ def compute_unit_loss_curve(
     p_val, k1_ghz, Eb_arr, E_ac,
     u_w, y_w, y_n, sin_u, cos_u, sin2_u,
     nn_val, sqrt_nn, rabi_c, v_c,
-    r_ac_nodes, r_dc_nodes, w_r_nodes,
-    tau_cutoff_local
+    r_ac_nodes, r_dc_nodes, w_r_nodes
 ):
     """
     Computes the normalized spatial AC/DC loss curve L_i(p, k1) in [0, 1]
@@ -200,11 +200,7 @@ def compute_unit_loss_curve(
 
         # Spatial quadrature loop over r = |E_local| / E_mean
         for r_idx in range(n_radii):
-            # Check local DC sweep rate against tau_cutoff_local
-            local_eb = Eb_arr[i] * r_dc_nodes[r_idx]
-            if local_eb > tau_cutoff_local:
-                continue
-
+            
             Om_local = Om_base * r_ac_nodes[r_idx]
             v_local = v_base * r_dc_nodes[r_idx]
             w_r = w_r_nodes[r_idx]
@@ -272,28 +268,48 @@ def compute_unit_loss_curve(
 # =====================================
 # 4. LOAD EXPERIMENTAL DATA & MPI WORKER
 # =====================================
-def load_loss_data(filepath):
+def load_loss_data(filepath, low_power_thresh=-55.0):
     df = pd.read_csv(filepath)
-    n_data = df["photon_number"].values
-    loss_data = df["loss_tangent"].values
-    nu = df["bias_frequency"].values
+    df.columns = df.columns.str.strip()
 
-    # Unprojected DC sweep rate
-    dE_dt = 2.0 * V_BIAS * nu * E_mean
-    E_ac = E_vac * np.sqrt(n_data)
+    # 1. Find the tau-TLS regime
+    low_pwr = df[df['drive_power'] <= low_power_thresh]
+    y_low = low_pwr.groupby('bias_frequency')['loss_tangent'].mean().values * 1e6
+    nu_arr = np.sort(low_pwr['bias_frequency'].unique())
 
-    valid_mask = np.isfinite(n_data) & np.isfinite(loss_data)
+    tau_baseline = np.mean(y_low[:3])
+    log_nu = np.log10(nu_arr)
+    log_y = np.log10(y_low)
+    slope, intercept, _, _, _ = linregress(log_nu[-4:], log_y[-4:])
 
-    return (
-        dE_dt[valid_mask],
-        loss_data[valid_mask],
-        E_ac[valid_mask],
-        n_data[valid_mask],
-        nu[valid_mask]
+    log_nu_cut = (np.log10(tau_baseline) - intercept) / slope
+    nu_cut = 10 ** log_nu_cut
+
+    print(f"Dynamically calculated tau-TLS cutoff: {nu_cut:.0f} Hz", flush=True)
+
+    # 2. Filter dataset
+    valid_mask = (
+        np.isfinite(df['photon_number'])
+        & np.isfinite(df['loss_tangent'])
+        & (df['bias_frequency'] <= nu_cut)
     )
 
+    df_active = df[valid_mask].copy()
 
-GLOBAL_EB, GLOBAL_LOSS, GLOBAL_E_AC, GLOBAL_NPH, GLOBAL_NU = load_loss_data(INPUT_FILE)
+    n_data = df_active['photon_number'].values
+    loss_data = df_active['loss_tangent'].values
+    nu_data = df_active['bias_frequency'].values
+    drive_data = df_active['drive_power'].values
+
+    print(f"Restricted fit to {len(loss_data)} slow-sweep data points.", flush=True)
+
+    # Unprojected DC sweep rate and AC field
+    Eb_data = 2.0 * V_BIAS * nu_data * E_mean
+    Eac_data = E_vac * np.sqrt(n_data)
+
+    return drive_data, n_data, loss_data, nu_data, Eac_data, Eb_data
+
+GLOBAL_DRIVE, GLOBAL_NPH, GLOBAL_LOSS, GLOBAL_NU, GLOBAL_E_AC, GLOBAL_EB = load_loss_data(INPUT_FILE)
 
 def compute_grid_point(task):
     i, p_val, j, g_val = task
@@ -304,8 +320,7 @@ def compute_grid_point(task):
         p_val, k1_ghz, GLOBAL_EB, GLOBAL_E_AC,
         U_W, Y_W, Y_N, SIN_U, COS_U, SIN2_U,
         NN, SQRT_NN, RABI_COEFF, V_COEFF,
-        R_AC_NODES, R_DC_NODES, W_R_NODES,
-        TAU_CUTOFF_LOCAL
+        R_AC_NODES, R_DC_NODES, W_R_NODES
     )
 
     return (i, j, unit_loss)
@@ -314,8 +329,6 @@ def compute_grid_point(task):
 # 5. MPI EXECUTION & SAVE
 # =====================================
 if __name__ == "__main__":
-    OUTPUT_FILE = DATA_DIR / f"loss_grid_{SPATIAL_MODE}.npz"
-
     with MPIPool() as pool:
         if not pool.is_master():
             pool.wait()
@@ -367,6 +380,7 @@ if __name__ == "__main__":
                 E_ac=GLOBAL_E_AC,
                 n_ph=GLOBAL_NPH,
                 nu=GLOBAL_NU,
+                drive=GLOBAL_DRIVE,
                 spatial_mode=SPATIAL_MODE
             )
         elapsed_total = (time.time() - start_time) / 60

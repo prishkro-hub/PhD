@@ -63,7 +63,7 @@ def log_probability(theta, n_data, loss_data):
     return -0.5 * chi2
 
 # ==================================================
-# 3. Load Data & Calculate Fields
+# 3. Load Data & Calculate Cutoff
 # ==================================================
 def load_data(filepath, low_power_thresh=-55.0):
     df = pd.read_csv(filepath)
@@ -84,7 +84,7 @@ def load_data(filepath, low_power_thresh=-55.0):
 
     print(f"Dynamically calculated tau-TLS cutoff: {nu_cut:.0f} Hz", flush=True)
 
-    # 1. Filter dataset
+    # 2. Filter dataset
     valid_mask = (
         np.isfinite(df['photon_number'])
         & np.isfinite(df['loss_tangent'])

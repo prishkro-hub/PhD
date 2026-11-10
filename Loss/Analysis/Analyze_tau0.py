@@ -28,8 +28,8 @@ cfg = get_paths()
 FIT_DIR = cfg["fit_dir"]
 PLOTS_DIR = FIT_DIR / "Plots"
 
-CHAIN_FILE = FIT_DIR / "tau0_fit.csv"
-PLOT_PREFIX = "tau0"
+CHAIN_FILE = FIT_DIR / "tan_0_fit.h5"
+PLOT_PREFIX = "tau_0"
 
 N_WALKERS = 32
 NDIM = 3
@@ -91,7 +91,7 @@ def load_chain_data(chain_path, n_walkers=32, ndim=3):
     # Fallback for older CSV chains
     df = pd.read_csv(chain_path)
     df.columns = df.columns.str.strip()
-    cols = ["log_tan0", "nc", "log_tan_bg"]
+    cols = ["log_tan0", "log_nc", "log_tan_bg"]
     if not all(c in df.columns for c in cols):
         print(f"Error: CSV missing required columns. Found: {df.columns.to_list()}")
         return None, None
@@ -154,10 +154,6 @@ def analyze_bloch_fit(chain_file):
         return None
 
     n_steps_total, n_walkers_loaded, _ = chain.shape
-
-    # Convert log10 parameters to physical units: tan0 and tan_bg
-    chain[:, :, 0] = 10.0 ** chain[:, :, 0]
-    chain[:, :, 2] = 10.0 ** chain[:, :, 2]
 
     # 1. Apply initial manual warm-up cut
     if n_steps_total > MANUAL_CUT:
@@ -238,14 +234,18 @@ def analyze_bloch_fit(chain_file):
     lower = median - p16
     upper = p84 - median
 
+    map_linear = 10.0 ** map_vals
+    med_linear = 10.0 ** median
+
     print(f"\n{'Parameter':<15} | {'MAP (Best Fit)':<15} | {'Median (Posterior)':<25}")
     print("-" * 65)
     summary_data = []
     for i in range(NDIM):
-        val_fmt = "{:.4f}" if i == 1 else "{:.4e}"
+        val_fmt = "{:.4e}"
         print(
             f"{labels_text[i]:<15} | {val_fmt.format(map_vals[i]):<15} | "
             f"{val_fmt.format(median[i])} (-{val_fmt.format(lower[i])} / +{val_fmt.format(upper[i])}) {units[i]}"
+            f"\nLinearized {labels_text[i]:<15} | {val_fmt.format(med_linear[i])}"
         )
         summary_data.append({
             "Parameter": labels_text[i],
@@ -253,7 +253,7 @@ def analyze_bloch_fit(chain_file):
             "Median (Posterior)": val_fmt.format(median[i]),
             "Error (-)": val_fmt.format(lower[i]),
             "Error (+)": val_fmt.format(upper[i]),
-            "Units": units[i]
+            "Units": units[i],
         })
 
     # 6. Plotting: Post-Cut Walker Traces

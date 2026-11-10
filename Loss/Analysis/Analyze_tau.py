@@ -321,7 +321,7 @@ def analyze_bloch_fit(chain_file):
 # 6. EXECUTION BLOCK
 # =====================================
 if __name__ == "__main__":
-    df_summary = analyze_bloch_fit()
+    df_summary = analyze_bloch_fit(CHAIN_FILE)
 
     if df_summary is not None:
         print(f"\n{'='*50}\nCOMPILING SUMMARY TABLE\n{'='*50}")
