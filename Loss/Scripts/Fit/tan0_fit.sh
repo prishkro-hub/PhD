@@ -9,8 +9,8 @@
 #$ -e /dev/null
 
 # 1. Setup Logs
-LOGS="Labber/Yaniv/Logs/Fits"
-OUTPUTS="Labber/Yaniv/Outputs/Fits"
+LOGS="Loss/Logs/Fits"
+OUTPUTS="Loss/Outputs/Fits"
 mkdir -p ${LOGS}
 
 # 2. Initialize Conda
@@ -40,6 +40,6 @@ LOG_FILE="${LOGS}/Tan0_Fit.log"
 echo "--- JOB STARTING AT $(date) ON HOST $HOSTNAME ---" > $LOG_FILE
 
 # 6. Execute with MPI
-mpirun -np $NSLOTS python -u Labber/Yaniv/Scripts/Fits/tan0_fit.py >> $LOG_FILE 2>&1
+mpirun -np $NSLOTS python -u Loss/Scripts/Fits/tan0_fit.py >> $LOG_FILE 2>&1
 
 echo "--- JOB FINISHED AT $(date) ---" >> $LOG_FILE
