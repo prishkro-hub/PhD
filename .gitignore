@@ -15,7 +15,7 @@ __pycache__/
 # *.csv
 *.h5
 *.npy
-*.npz
+# *.npz
 
 # Large Outputs (plots, logs, etc.)
 *.png
