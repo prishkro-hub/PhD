@@ -146,7 +146,7 @@ if __name__ == "__main__":
             args=(n_data, loss_data),
             moves=[
                 (emcee.moves.StretchMove(a=2.0), 0.7),
-                (emcee.moves.DEMove(), 0.2)
+                (emcee.moves.DEMove(), 0.2),
                 (emcee.moves.DESnookerMove(), 0.1)
             ],
             pool=pool,

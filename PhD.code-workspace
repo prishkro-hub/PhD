@@ -17,21 +17,82 @@
     //     "terminal.integrated.cwd": "${workspaceFolder}"
     // },
     "tasks": {
-        "version": "2.0.0",
-        "tasks": [
-            {
-                "label": "Git Fast-Push Code",
-                "command": "git add -A && (git diff --cached --quiet || git commit -m \"Automatted cluster update via VS Code\") && git pull && git push",
-                "type": "shell",
-                "options": {
-                    "cwd": "${workspaceFolder}"
-                },
-                "presentation": {
-                    "reveal": "silent",
-                    "panel": "shared",
-                },
-                "problemMatcher": []
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Git Fast-Push Code",
+            "type": "shell",
+            "command": "git add -A && (git commit -m \"Automated cluster update via VS Code\" || true) && git pull && git push",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
             }
-        ]
-    }
+        },
+        {
+            "label": "Submit SGE Job",
+            "type": "shell",
+            "command": "bash -l ${relativeFile}",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Submit Single Script (qsub)",
+            "type": "shell",
+            "command": "bash -l -c 'qsub ${relativeFile}'",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Tail Active Script Logs",
+            "type": "shell",
+            "command": "bash -l -c 'LOG_PATH=\"${fileDirname}\"; LOG_PATH=\"${LOG_PATH/\\/Scripts\\//\\/Logs\\/}\"; tail -f \"$LOG_PATH\"/*.log'",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": true,
+                "clear": true
+            },
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "Tail Specific Logs (Prompt)",
+            "type": "shell",
+            "command": "bash -l -c 'tail -f ${input:customLogFilter}'",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": true,
+                "clear": true
+            },
+            "isBackground": true,
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "customLogFilter",
+            "type": "promptString",
+            "description": "Enter log path(s) or pattern (relative to root or absolute):",
+            "default": "Freq_Shift/Logs/Two-TLS/Fit/*.log"
+        }
+    ]
+}
+
 }
