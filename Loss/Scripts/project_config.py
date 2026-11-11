@@ -7,7 +7,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 ACTIVE_MATERIAL = "Al-Sapp"
 ACTIVE_RES = "6789_MHz"
 ACTIVE_VOLTAGE = "5V"
-ACTIVE_SPATIAL_MODE = "burin_log_pdf"
+ACTIVE_SPATIAL_MODE = "uniform"
 
 # Hardware / Physics parameters tied to specific resonators
 RESONATOR_SPECS = {

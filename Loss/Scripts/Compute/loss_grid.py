@@ -30,7 +30,6 @@ V_BIAS = float(cfg["V_bias"])
 #   "burin_ac_only"  -> Step 2 (Analytical): P(r) ~ r^{-3}, Spatial AC (r_ac = r), Uniform DC
 #   "hfss_ac_only"        -> Step 2 (Empirical)   : Spatial AC (r_ac = r), Uniform DC (r_dc = 1, /sqrt(3))
 #   "uniform"        -> Step 1 (Uniform)   : Uniform AC/DC (r_ac = 1, r_dc = 1)
-SPATIAL_MODE = "burin_log_pdf"
 N_SPATIAL = 12
 N_GRID = 45
 
