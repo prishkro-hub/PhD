@@ -12,19 +12,27 @@ from schwimmbad import MPIPool
 # =====================================
 # 1. DIRECTORY & MODE CONFIGURATION
 # =====================================
-CURRENT_DIR = Path(__file__).resolve().parent
-if (CURRENT_DIR / "hfss_spatial_data.npz").exists():
-    DATA_DIR = CURRENT_DIR
-    YANIV_DIR = CURRENT_DIR.parents[1]
-elif (CURRENT_DIR.parent / "Data").exists():
-    YANIV_DIR = CURRENT_DIR.parent
-    DATA_DIR = YANIV_DIR / "Data" / "5umGapRes_6789MHz_data"
-else:
-    YANIV_DIR = CURRENT_DIR.parents[2]
-    DATA_DIR = YANIV_DIR / "Data" / "5umGapRes_6789MHz_data"
+SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SCRIPTS_DIR))
 
-INPUT_FILE = DATA_DIR / "processed_compute.csv"
-TAN_S0_CHAIN_FILE = YANIV_DIR / "Outputs" / "Fits" / "tan_s0_fit.cdv"
+from project_config import get_paths
+cfg = get_paths()
+
+DATA_DIR = cfg["data_dir"]
+FIT_DIR = cfg["fit_dir"]
+SPATIAL_MODE = cfg["spatial_mode"]
+INPUT_FILE = cfg["processed_csv"]
+OUTPUT_FILE = cfg["S_grid"]
+V_BIAS = float(cfg["V_bias"])
+
+# Specific S-TLS Parameters
+NU_CUT = 9702.0     # Hz
+MIN_PWR = -35.0     # dBm
+MAX_PWR = -11.0     # dBm
+
+BEST_TAN_S0_CSV = FIT_DIR / "Best_Parameters_tan_S0.csv" 
+# Fallback MAP parameters from tan_s0 fit if the CSV is missing
+DEFAULT_TAN_S0_PARAMS = (4.9283e-8, 1.0556, 5.5915, 1.1094e7)
 
 # Spatial Integration Mode:
 #   "burin_log_pdf"  -> Step 3 (Analytical): P(r) ~ r^{-3} => flat weight in u = ln(r)
@@ -36,8 +44,6 @@ SPATIAL_MODE = "uniform"
 N_SPATIAL = 12
 N_GRID = 45
 
-# Fallback MAP parameters from tan_s0 fit if the CSV is missing
-DEFAULT_TAN_S0_PARAMS = (8.3604e-8, 0.9291, 5.8538, 8.1344e6)
 
 # =====================================
 # 2. CONSTANTS & QUADRATURE ARRAYS
@@ -275,16 +281,18 @@ def compute_unit_loss_curve(
 # =====================================
 def get_tan_s0_params(chain_filepath):
     if chain_filepath.exists():
-        df_c = pd.read_csv(chain_filepath).dropna()
-        best_idx = df_c["log_prob"].idxmax()
-        row = df_c.loc[best_idx]
+        df_map = pd.read_csv(chain_filepath).dropna()
+        df_map.set_index("Parameter", inplace=True)
 
-        A_val = 10.0 ** float(row["log_A"])
-        B_val = float(row["B"])
-        C_val = float(row["C"])
-        D_val = 10.0 ** float(row["log_D"])
+        MAP_log_A = df_map.loc["logA", "MAP (Best Fit)"]
+        MAP_B = df_map.loc["B", "MAP (Best Fit)"]
+        MAP_C = df_map.loc["C", "MAP (Best Fit)"]
+        MAP_log_D = df_map.loc["logD", "MAP (Best Fit)"]
+
+        MAP_A = 10.0 ** MAP_log_A
+        MAP_D = 10.0 ** MAP_log_D
         
-        return A_val, B_val, C_val, D_val
+        return MAP_A, MAP_B, MAP_C, MAP_D
     return DEFAULT_TAN_S0_PARAMS
 
 def calc_tan_s0(Eb_array, A, B, C, D):
@@ -305,12 +313,12 @@ def load_loss_data(filepath, chain_filepath):
     E_ac = E_vac * np.sqrt(n_data)
 
     # Precompute across all high-power S-TLS points (power >= -33 dBm, dE_dt > 1.698e9)
-    s_cutoff = 1.698e9
     valid_mask = (
         np.isfinite(n_data)
         & np.isfinite(loss_data)
-        & (dE_dt > s_cutoff)
-        & (pwr_data >= -33.0)
+        & (nu > NU_CUT)
+        & (pwr_data >= MIN_PWR)
+        & (pwr_data <= MAX_PWR)
     )
 
     eb_active = dE_dt[valid_mask]
@@ -338,7 +346,7 @@ def load_loss_data(filepath, chain_filepath):
     GLOBAL_NU,
     GLOBAL_TAN_S0,
     TAN_S0_PARAMS
-) = load_loss_data(INPUT_FILE, TAN_S0_CHAIN_FILE)
+) = load_loss_data(INPUT_FILE, BEST_TAN_S0_CSV)
 
 def compute_grid_point(task):
     i, p_val, j, g_val = task
@@ -358,8 +366,6 @@ def compute_grid_point(task):
 # 5. MPI EXECUTION & SAVE
 # =====================================
 if __name__ == "__main__":
-    OUTPUT_FILE = DATA_DIR / f"loss_grid_S_{SPATIAL_MODE}.npz"
-
     with MPIPool() as pool:
         if not pool.is_master():
             pool.wait()
@@ -373,8 +379,8 @@ if __name__ == "__main__":
             flush=True
         )
 
-        p_grid = np.geomspace(50.0, 2500.0, N_GRID)
-        g_grid = np.linspace(-1.5, 4.0, N_GRID)
+        p_grid = np.geomspace(1.0, 400.0, N_GRID)
+        g_grid = np.linspace(0.0, 4.0, N_GRID)
 
         loss_grid_matrix = np.zeros((len(p_grid), len(g_grid), len(GLOBAL_LOSS)), dtype=np.float64)
 

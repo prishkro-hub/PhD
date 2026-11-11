@@ -111,8 +111,9 @@ def plot_processed_data(input_file, save_path):
     ax2.set_xscale('log')
 
     for P in unique_powers:
-        if P >= -95:
+        if -7 >= P > -11:
             subset = df_sorted[df_sorted["power"] == P]
+            subset = subset[subset["bias_frequency"] >= 9702.0 ]
             color = cmap(norm(P))
             
             # Left Subplot: tau-TLS
@@ -154,7 +155,7 @@ def plot_processed_data(input_file, save_path):
     cbar.ax.tick_params(labelsize=16)
 
     plt.tight_layout()
-    plt.savefig(save_path, dpi=300)
+    # plt.savefig(save_path, dpi=300)
     print(f"Processed data plot saved to: {save_path}")
     plt.show()
 
