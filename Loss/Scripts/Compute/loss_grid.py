@@ -267,22 +267,9 @@ def compute_unit_loss_curve(
 # =====================================
 # 4. LOAD EXPERIMENTAL DATA & MPI WORKER
 # =====================================
-def load_loss_data(filepath, low_power_thresh=-55.0):
+def load_loss_data(filepath, nu_cut = 9702.0):
     df = pd.read_csv(filepath)
     df.columns = df.columns.str.strip()
-
-    # 1. Find the tau-TLS regime
-    low_pwr = df[df['drive_power'] <= low_power_thresh]
-    y_low = low_pwr.groupby('bias_frequency')['loss_tangent'].mean().values * 1e6
-    nu_arr = np.sort(low_pwr['bias_frequency'].unique())
-
-    tau_baseline = np.mean(y_low[:3])
-    log_nu = np.log10(nu_arr)
-    log_y = np.log10(y_low)
-    slope, intercept, _, _, _ = linregress(log_nu[-4:], log_y[-4:])
-
-    log_nu_cut = (np.log10(tau_baseline) - intercept) / slope
-    nu_cut = 10 ** log_nu_cut
 
     print(f"Dynamically calculated tau-TLS cutoff: {nu_cut:.0f} Hz", flush=True)
 

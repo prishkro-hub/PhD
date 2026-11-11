@@ -28,17 +28,14 @@ GRID_FILE = cfg["tau_grid"]
 BACKEND_FILE = cfg["tau_backend"]
 CSV_CHAIN_FILE = cfg["tau_chain"]
 
-TAN0 = 4.51e-6 #8.6577e-6
-TAN_BG = 0.0 #3.3573e-6
-
 # Set False for ignorant flat priors (recommended for spatial fits),
 # or True to apply the legacy Gaussian priors from the uniform fit.
-USE_LEGACY_GAUSSIAN_PRIORS = False
+USE_LEGACY_GAUSSIAN_PRIORS = True
 
 # MCMC Hyperparameters
-N_DIM = 3
+N_DIM = 4
 N_WALKERS = 32
-N_STEPS = 5000
+N_STEPS = 10000
 N_BATCH = 1000
 
 # =====================================
@@ -81,13 +78,20 @@ G_MIN, G_MAX = float(G_GRID[0]), float(G_GRID[-1])
 # 3. MCMC LOG PROBABILITY
 # =====================================
 def log_probability(theta):
-    p_val, log_k1_MHz, A_val = theta
+    p_val, log_k1_MHz, log_tan0, log_tan_bg = theta
     
-    if not (P_MIN <= p_val <= P_MAX and -1.0 < log_k1_MHz < G_MAX and 0.3 < A_val < 1.7):
+    if not(P_MIN <= p_val <= P_MAX
+           and G_MIN < log_k1_MHz < G_MAX
+           and -6.0 < log_tan0 < -4.0
+           and -7.0 < log_tan_bg < -5.0):
         return -np.inf
 
-    unit_loss = LOSS_SPLINE(np.array([[np.log10(p_val), log_k1_MHz]]))[0]
-    model = TAN_BG + TAN0 * A_val * unit_loss
+    tan0 = 10.0 ** log_tan0
+    tan_bg = 10.0 ** log_tan_bg
+    log_p = np.log10(p_val)
+
+    unit_loss = LOSS_SPLINE(np.array([[log_p, log_k1_MHz]]))[0]
+    model = tan_bg +  tan0 * unit_loss
 
     chi2 = np.sum(((LOSS_DATA - model) / SIGMA_DATA) ** 2)
     if np.isnan(chi2) or not np.isfinite(chi2):
@@ -96,10 +100,8 @@ def log_probability(theta):
     log_prob = -0.5 * chi2
     
     if USE_LEGACY_GAUSSIAN_PRIORS:
-        log_prob += -0.5 * ((p_val - 18.0) / 2.0) ** 2
-        log_prob += -0.5 * ((log_k1_MHz - 0.7) / 0.2) ** 2
-        log_prob += -0.5 * ((A_val - 1.0) / 0.0018) ** 2
-
+        log_prob += -0.5 * ((log_k1_MHz - 0.7) / 0.5) ** 2
+        
     return log_prob
         
 # =====================================
@@ -116,8 +118,8 @@ if __name__ == "__main__":
         backend = emcee.backends.HDFBackend(str(BACKEND_FILE))
         backend.reset(N_WALKERS, N_DIM)
 
-        p0_center = np.array([15.0, 0.2, 1.0])
-        jitter = np.array([1.5, 0.15, 0.05])
+        p0_center = np.array([15.0, 0.2, -5.05, -5.56])
+        jitter = np.array([1.5, 0.15, 0.05, 0.05])
 
         p0 = []
         for _ in range(N_WALKERS):
@@ -130,7 +132,7 @@ if __name__ == "__main__":
         sampler = emcee.EnsembleSampler(
             N_WALKERS, N_DIM, log_probability,
             moves=[
-                (emcee.moves.StretchMove(a=4.0), 0.7),
+                (emcee.moves.StretchMove(a=2.0), 0.7),
                 (emcee.moves.DEMove(), 0.2),
                 (emcee.moves.DESnookerMove(), 0.1)
             ],
@@ -174,7 +176,8 @@ if __name__ == "__main__":
         df_out = pd.DataFrame({
             "p_val": flat_chain[:, 0],
             "log_k1_MHz": flat_chain[:, 1],
-            "A_val": flat_chain[:, 2],
+            "log_tan0": flat_chain[:, 2],
+            "log_tan_bg": flat_chain[:, 3],
             "log_prob": flat_probs
         })
         df_out.to_csv(CSV_CHAIN_FILE, index=False)

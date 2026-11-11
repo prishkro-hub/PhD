@@ -33,7 +33,7 @@ CHAIN_FILE = cfg["tau_chain"]
 PLOT_PREFIX = f"tau_{SPATIAL_MODE}"
 
 N_WALKERS = 32
-NDIM = 3
+NDIM = 4
 MANUAL_CUT = 800
 MIN_BURN_IN = 500  # Increased for a 10000-step MCMC run
 
@@ -92,7 +92,7 @@ def load_chain_data(chain_path, n_walkers=32, ndim=3):
     # Fallback for older CSV chains
     df = pd.read_csv(chain_path)
     df.columns = df.columns.str.strip()
-    cols = ["p_val", "log_k1_MHz", "A_val"]
+    cols = ["p_val", "log_k1_MHz", "log_tan0", "log_tan_bg"]
     if not all(c in df.columns for c in cols):
         print(f"Error: CSV missing required columns. Found: {df.columns.to_list()}")
         return None, None
@@ -134,10 +134,10 @@ def prune_stuck_walkers(chain, log_probs, max_delta_lp=25.0, mad_thresh=5.0):
     if len(bad_indices) > 0:
         print(f"\n[PRUNING] Filtering out {len(bad_indices)} stuck walker(s): {bad_indices.tolist()}")
         for idx in bad_indices:
-            p_stuck, k_stuck, A_stuck = walker_med_params[idx]
+            p_stuck, k_stuck, t0_stuck, t_bg_stuck = walker_med_params[idx]
             print(
                 f"   -> Walker {idx:2d}: p_tau={p_stuck:.2f} D, "
-                f"Gamma_1={k_stuck:.4f} MHz, A_val={A_stuck:.2e} "
+                f"Gamma_1={k_stuck:.2f} MHz, tan0={t0_stuck:.2f}, tan_bg={t_bg_stuck:.2f} "
                 f"(median log_prob={walker_med_lp[idx]:.1f} vs best={best_med_lp:.1f})"
             )
 
@@ -157,7 +157,7 @@ def analyze_bloch_fit(chain_file):
     n_steps_total, n_walkers_loaded, _ = chain.shape
 
     # Convert log10 parameters to physical units: Gamma_1
-    chain[:, :, 1] = 10.0 ** chain[:, :, 1]
+    # chain[:, :, 1] = 10.0 ** chain[:, :, 1]
     # chain[:, :, 2] = 10.0 ** chain[:, :, 2]
 
     # 1. Apply initial manual warm-up cut
@@ -185,9 +185,9 @@ def analyze_bloch_fit(chain_file):
     print(f"[INFO] Active ensemble: {n_good_walkers}/{n_walkers_loaded} walkers over {n_steps} steps.")
 
     # 3. Autocorrelation Analysis
-    labels_text = ["p_tau", "Gamma_1", "A_val"]
-    units = ["D", "MHz", ""]
-    plot_labels = [r"$p_\tau$", r"$\Gamma_1^\tau$", r"$A_{val}$"]
+    labels_text = ["p_tau", "Gamma_1", "tan_0", "tan_bg"]
+    units = ["D", "MHz", "", ""]
+    plot_labels = [r"$p_\tau$", r"$\Gamma_1^\tau$", r"$\tan(\delta_0)$", r"$\tan(\delta_{bg})$"]
 
     try:
         tau_array = emcee.autocorr.integrated_time(chain, tol=0)
@@ -243,7 +243,7 @@ def analyze_bloch_fit(chain_file):
     print("-" * 65)
     summary_data = []
     for i in range(NDIM):
-        val_fmt = "{:.4e}" if i == 1 else "{:.4f}"
+        val_fmt = "{:.4f}"
         print(
             f"{labels_text[i]:<15} | {val_fmt.format(map_vals[i]):<15} | "
             f"{val_fmt.format(median[i])} (-{val_fmt.format(lower[i])} / +{val_fmt.format(upper[i])}) {units[i]}"

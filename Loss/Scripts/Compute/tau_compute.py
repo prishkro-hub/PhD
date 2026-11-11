@@ -22,7 +22,8 @@ DATA_DIR = cfg["data_dir"]
 COMP_DIR = cfg["comp_dir"]
 
 INPUT_FILE = cfg["raw_csv"]
-OUTPUT_FILE = COMP_DIR / "tau_compute.csv"
+GRID_FILE = cfg["tau_grid"]
+OUTPUT_FILE = cfg["processed_csv"]
 
 # Spatial Integration Mode:
 #   "burin_log_pdf"  -> Step 3 (Analytical): P(r) ~ r^{-3} => flat weight in u = ln(r)
@@ -31,19 +32,19 @@ OUTPUT_FILE = COMP_DIR / "tau_compute.csv"
 #   "hfss_ac_only"        -> Step 2 (Empirical)   : Spatial AC (r_ac = r), Uniform DC (r_dc = 1, /sqrt(3))
 #   "uniform"        -> Step 1 (Uniform)   : Uniform AC/DC (r_ac = 1, r_dc = 1)
 SPATIAL_MODE = cfg["spatial_mode"]
+SPATIAL_FILE = cfg["spatial_npz"]
 N_SPATIAL = 12
 N_GRID = 45
 
 # =====================================
 # 2. CONSTANTS & QUADRATURE ARRAYS
 # =====================================
+V_BIAS = cfg["V_bias"]
 DEBYE = 3.33564e-30
 HBAR = 1.054571817e-34
-V_BIAS = 5.0
 
 RABI_COEFF = (DEBYE / HBAR) * 1e-9          # Converts (p [D] * E_ac [v/m]) to GHz
 V_COEFF = (2.0 * DEBYE / HBAR) * 1e-18      # Converts (2 * p [D] * dE_dt [V/(m*s)]) to GHz^2
-TAU_CUTOFF_LOCAL = 1.698e9 * np.sqrt(3.0)
 
 NN = 100.0  # Stable cutoff
 SQRT_NN = np.sqrt(NN)
@@ -60,7 +61,7 @@ COS_U = np.cos(U_N)
 SIN2_U = SIN_U ** 2
 
 # Load HFSS spatial field data
-spatial_data = np.load(DATA_DIR / "hfss_spatial_data.npz")
+spatial_data = np.load(SPATIAL_FILE)
 E_k = spatial_data["E_k"]
 W_k = spatial_data["W_k"]
 E_mean = float(spatial_data["E_mean"])
@@ -98,9 +99,10 @@ else:
     raise ValueError(f"Unknown SPATIAL_MODE: {SPATIAL_MODE}")
 
 # MCMC Parameters
-TAN0 = 1.0171e-5 * 1.1225   # Times Fitted Absorber
-P_BEST = 18.1337            # D
-K1_BEST = 5.1583e-4         # GHz
+TAN0 = 9.04e-6
+TAN_BG = 3.10e-6   
+P_BEST = 28.5689            # D
+K1_BEST = 3.0556e-4         # GHz
 
 # =====================================
 # 3. CRACK-NICOLSON & HYBRID LOSS ENGINE

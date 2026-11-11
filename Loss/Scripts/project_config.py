@@ -7,7 +7,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 ACTIVE_MATERIAL = "Al-Sapp"
 ACTIVE_RES = "6789_MHz"
 ACTIVE_VOLTAGE = "5V"
-ACTIVE_SPATIAL_MODE = "uniform"
+ACTIVE_SPATIAL_MODE = "hfss_histogram"
 
 # Hardware / Physics parameters tied to specific resonators
 RESONATOR_SPECS = {
