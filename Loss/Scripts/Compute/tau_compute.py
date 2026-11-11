@@ -313,6 +313,8 @@ if __name__ == "__main__":
 
     tau_loss = TAN0 * unit_loss
 
+    S_loss = GLOBAL_LOSS - tau_loss - TAN_BG
+
 
     df_out = pd.DataFrame({
         "power": GLOBAL_DRIVE,
@@ -320,7 +322,8 @@ if __name__ == "__main__":
         "n_ph": GLOBAL_NPH,
         "dE_dt": GLOBAL_EB,
         "y_exp": GLOBAL_LOSS,
-        "y_tau": tau_loss
+        "y_tau": tau_loss,
+        "y_S": S_loss
     })
 
     elapsed = time.time() - start_time
