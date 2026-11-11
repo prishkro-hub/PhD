@@ -9,8 +9,8 @@
 #$ -e /dev/null
 
 # 1. Setup Logs
-LOGS="Loss/Logs/Fits"
-OUTPUTS="Loss/Outputs/Fits"
+LOGS="Loss/Logs/Al-Sapp/6789_MHz/5V/Fit"
+OUTPUTS="Loss/Outputs/Al-Sapp/6789_MHz/5V/Fit"
 mkdir -p ${LOGS}
 
 # 2. Initialize Conda
@@ -40,6 +40,6 @@ LOG_FILE="${LOGS}/Tan_S0_Fit.log"
 echo "--- JOB STARTING AT $(date) ON HOST $HOSTNAME ---" > $LOG_FILE
 
 # 6. Execute with MPI
-mpirun -np 33 --bind-to none python -u Loss/Scripts/Fits/tan_S0_fit.py >> $LOG_FILE 2>&1
+mpirun -np 33 --bind-to none python -u Loss/Scripts/Fit/tan_S0_fit.py >> $LOG_FILE 2>&1
 
 echo "--- JOB FINISHED AT $(date) ---" >> $LOG_FILE

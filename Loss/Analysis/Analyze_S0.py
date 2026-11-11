@@ -184,9 +184,9 @@ def analyze_bloch_fit(chain_file):
     print(f"[INFO] Active ensemble: {n_good_walkers}/{n_walkers_loaded} walkers over {n_steps} steps.")
 
     # 3. Autocorrelation Analysis
-    labels_text = ["A", "B", "C", "D"]
-    units = ["", "", "", "V/(um s)"]
-    plot_labels = ["A", "B", "C", r"D (V/$\mu$m s)"]
+    labels_text = ["logA", "B", "C", "logD"]
+    units = ["", "", "", ""]
+    plot_labels = [r"\log_{10}A", "B", "C", r"\log_{10}D (V/$\mu$m s)"]
 
     try:
         tau_array = emcee.autocorr.integrated_time(chain, tol=0)
@@ -242,7 +242,7 @@ def analyze_bloch_fit(chain_file):
     print("-" * 65)
     summary_data = []
     for i in range(NDIM):
-        val_fmt = "{:.4f}"# if (i == 1 or i == 2) else "{:.4e}"
+        val_fmt = "{:.4f}"
         print(
             f"{labels_text[i]:<15} | {val_fmt.format(map_vals[i]):<15} | "
             f"{val_fmt.format(median[i])} (-{val_fmt.format(lower[i])} / +{val_fmt.format(upper[i])}) {units[i]}"

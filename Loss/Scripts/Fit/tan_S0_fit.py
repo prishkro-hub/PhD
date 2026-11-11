@@ -27,6 +27,10 @@ INPUT_FILE = cfg["processed_csv"]
 BACKEND_FILE = FIT_DIR / f"tan_s0_fit.h5"
 CSV_CHAIN_FILE = FIT_DIR / f"tan_s0_fit.csv"
 
+# --- S-regime parameters
+MIN_PWR = -75.0     # dBm
+MAX_PWR = -60.0     # dBm
+NU_CUT = 9702.0     # Hz
 # --- MCMC Hyperparameters ---
 N_DIM = 4
 N_WALKERS = 32
@@ -75,14 +79,19 @@ def log_probability(theta, data_Eb, data_loss, sigma_arr):
 def load_data(filepath):
     df = pd.read_csv(filepath)
 
-    sub = df[df["power"] <= -55.0].copy()
+    S_mask = (
+        (df["power"] >= MIN_PWR)
+        & (df["power"] <= MAX_PWR)
+        & (df["bias_frequency"] >= NU_CUT)
+    )
+    sub = df[S_mask].copy()
 
     # Empirical per-frequency nois across low-power points
-    sub["sigma"] = sub.groupby("bias_frequency")["raw_y_S"].transform(
+    sub["sigma"] = sub.groupby("bias_frequency")["y_S"].transform(
         lambda x: max(x.std(), 1.0e-7)
     )
     dE_dt_val = sub["dE_dt"].values
-    loss_data_val = sub["raw_y_S"].values
+    loss_data_val = sub["y_S"].values
     sigma_val = sub["sigma"].values
 
     return dE_dt_val, loss_data_val, sigma_val
@@ -103,33 +112,17 @@ if __name__ == "__main__":
         
         dE_dt, loss_data, sigma_data = load_data(INPUT_FILE)
         
-        # Start near optimized values and verify initialization
-        x0_guess = np.array([-6.8, 0.88, 5.5, 7.2])
-        res_init = minimize(
-            lambda x: -log_probability(x, dE_dt, loss_data, sigma_data),
-            x0_guess,
-            method="Nelder-Mead",
-            options={"xatol": 1e-4, "fatol": 1e-4, "maxiter": 2000}
-        )
-        if np.isfinite(log_probability(res_init.x, dE_dt, loss_data, sigma_data)):
-            p0_center = res_init.x
-        else:
-            p0_center = x0_guess
-        print(
-            f"Initialized at MAP: logA={p0_center[0]:.3f} (A={10**p0_center[0]*1e6:.3f} ppm), "
-            f"B={p0_center[1]:.3f}, C={p0_center[2]:.2f}, logD={p0_center[3]:.3f} "
-            f"(log_prob={log_probability(p0_center, dE_dt, loss_data, sigma_data):.2f})",
-            flush=True
-        )
-
+        # Start near theorized values
+        p0_center = np.array([-6.8, 0.88, 5.5, 7.2])
         jitter = np.array([0.25, 0.1, 0.1, 0.25])
+
         p0, init = [], time.time()
         for _ in range(N_WALKERS):
             valid_spawn = False
             attempts = 0
             while not valid_spawn:
                 guess = p0_center + jitter * np.random.randn(N_DIM)
-                lp = log_probability(guess, dE_dt, loss_data)
+                lp = log_probability(guess, dE_dt, loss_data, sigma_data)
 
                 if np.isfinite(lp):
                     p0.append(guess)
@@ -141,10 +134,11 @@ if __name__ == "__main__":
 
         sampler = emcee.EnsembleSampler(
             N_WALKERS, N_DIM, log_probability,
-            args=(dE_dt, loss_data),
+            args=(dE_dt, loss_data, sigma_data),
             moves=[
-                (emcee.moves.StretchMove(a=2.0), 0.8),
-                (emcee.moves.DESnookerMove(), 0.2)
+                (emcee.moves.StretchMove(a=2.0), 0.7),
+                (emcee.moves.DEMove(), 0.2),
+                (emcee.moves.DESnookerMove(), 0.1)
             ],
             pool=pool,
             backend=backend
@@ -187,4 +181,4 @@ if __name__ == "__main__":
         }).dropna()
 
         df.to_csv(CSV_CHAIN_FILE, index=False)
-        print(f"--- S-TLS INTRINSIC LOSS FIT COMPLETE | Saved HDF5 & CSV to {OUTPUT_DIR} ---", flush=True)
+        print(f"--- S-TLS INTRINSIC LOSS FIT COMPLETE | Saved HDF5 & CSV to {FIT_DIR} ---", flush=True)
