@@ -1,113 +1,158 @@
-import pandas as pd
+import sys
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import matplotlib.colors as mcolors
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-DATA_DIR = SCRIPT_DIR.parent/"Data"
-FILEPATH = DATA_DIR/"res6978__bias5V_powersweep_Dec4.csv"
-DATAPATH = DATA_DIR/"5umGapRes_6789MHz_data"
-# -------------------------------------------
-'''Import E field data from 2D HFSS simulation
-'''
+# =====================================
+# 1. DIRECTORY & CONFIGURATION
+# =====================================
+SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "Scripts"
+sys.path.insert(0, str(SCRIPTS_DIR))
 
-debye=3.34e-30
-Ae=1.6e-19*1e-10
-hbar=1.05e-34
-length=187.5e-6*4*18
-Edc_EnergyInJ_2dSim=5.8015E-011
-Edc_EnergyInJ_2dSim_Total=Edc_EnergyInJ_2dSim*length
+from project_config import get_paths
+cfg = get_paths()
 
-Capacitance=Edc_EnergyInJ_2dSim_Total*2
-Voltage_at_1Photon=np.sqrt(hbar*2*np.pi*6.789e9*2/Capacitance)   
+DATA_DIR = cfg["data_dir"]
+COMP_DIR = cfg["comp_dir"]
+FINAL_DIR = cfg["comparison_dir"]
+VOLT = f"{cfg['V_bias']}V"
 
+PLOT_MODE = "data"  # Choose from: "data", "comp", "fit"
+if PLOT_MODE == "data":
+    DATAFILE = cfg["raw_csv"]
+    PLOTFILE = DATA_DIR / "Plots" / "Raw_Plot.png"
+elif PLOT_MODE == "comp":
+    DATAFILE = cfg["processed_csv"]
+    PLOTFILE = COMP_DIR / "Plots" / "Comp_Plot.png"
+else:
+    DATAFILE = cfg["final_csv"]
+    PLOTFILE = FINAL_DIR / f"{VOLT}_Plot.png"
 
+# =====================================
+# 2. RAW DATA PLOTTER
+# =====================================
+def plot_raw_data(input_file, save_path):
+    """Plots the raw, unbroken experimental loss tangent sweeps."""
+    df = pd.read_csv(input_file)
+    df.columns = df.columns.str.strip()
 
-Es_MS=np.loadtxt(DATAPATH/"LS5LW5_MS.fld",skiprows=1)
-Es_MS=Es_MS[:,3]
-Es_MS=Es_MS[Es_MS!=0]
-Es_MSenergy=0.5*11*8.85e-12*Es_MS**2 
-vfrac_MS=np.sum(Es_MSenergy)*1e-9*1e-9*length/Edc_EnergyInJ_2dSim_Total
-Es=Es_MS*1.0
-Es_energy=Es_MSenergy*1.0
+    df_sorted = df.sort_values(by='bias_frequency')
+    unique_powers = np.sort(df_sorted['drive_power'].unique())
 
-Es_MAt=np.loadtxt(DATAPATH/"LS5LW5_MAt.fld",skiprows=1)
-Es_MAt=Es_MAt[:,3]/10
-Es_MAt=Es_MAt[Es_MAt!=0]
-Es_MAtenergy=0.5*10*8.85e-12*Es_MAt**2  
-vfrac_MAt=np.sum(Es_MAtenergy)*1e-9*1e-9*length/Edc_EnergyInJ_2dSim_Total
-Es=np.concatenate((Es,Es_MAt))
-Es_energy=np.concatenate((Es_energy,Es_MAtenergy))
+    # --- Colorbar Setup ---
+    cmap = cm.plasma
+    norm = mcolors.Normalize(vmin=unique_powers.min(), vmax=unique_powers.max())
+    sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
 
-Es_MAs=np.loadtxt(DATAPATH/"LS5LW5_MAs.fld",skiprows=1)
-Es_MAs=Es_MAs[:,3]/10
-Es_MAs=Es_MAs[Es_MAs!=0]
-Es_MAsenergy=0.5*10*8.85e-12*Es_MAs**2 # x1 (air) instead of 10 ? 
-vfrac_MAs=np.sum(Es_MAsenergy)*1e-9*1e-9*length/Edc_EnergyInJ_2dSim_Total
-Es=np.concatenate((Es,Es_MAs))
-Es_energy=np.concatenate((Es_energy,Es_MAsenergy))
+    fig, ax = plt.subplots(figsize=[12, 9])
+    
+    for P in unique_powers:
+        if -60 >= P >= -75:
+            subset = df_sorted[df_sorted["drive_power"] == P]
+            color = cmap(norm(P))
+            ax.plot(
+                subset['bias_frequency'], 
+                subset['loss_tangent'] * 1e6,
+                color=color, 
+                marker='o', 
+                markersize=4,
+                linewidth=1.5
+            )
 
-Es_SA_perp=np.loadtxt(DATAPATH/"LS5LW5_SA_perp.fld",skiprows=1)
-Es_SA_perp=Es_SA_perp[:,3]
-Es_SA_perp=Es_SA_perp[Es_SA_perp!=0]
-Es_SA_perpenergy=0.5*11*8.85e-12*Es_SA_perp**2  
-vfrac_SA_perp=np.sum(Es_SA_perpenergy)*1e-9*1e-9*length/Edc_EnergyInJ_2dSim_Total
+    # --- Formatting ---
+    ax.set_xscale('log')
+    ax.set_xlabel(r'Bias Voltage Frequency $\nu$ (Hz)', fontsize=20)
+    ax.set_ylabel(r'Raw $\tan\delta$ (x $10^6$)', fontsize=20)
+    ax.set_title('Raw TLS Loss Tangent vs Bias Frequency', fontsize=24, fontweight='bold')
+    ax.tick_params(labelsize=16)
 
-Es_SA_para=np.loadtxt(DATAPATH/"LS5LW5_SA_para.fld",skiprows=1)
-Es_SA_para=Es_SA_para[:,3]
-Es_SA_para=Es_SA_para[Es_SA_para!=0]
-Es_SA_paraenergy=0.5*11*8.85e-12*Es_SA_para**2
-vfrac_SA_para=np.sum(Es_SA_paraenergy)*1e-9*1e-9*length/Edc_EnergyInJ_2dSim_Total
-Es=np.concatenate((Es,np.sqrt(Es_SA_para**2+Es_SA_perp**2)))
-Es_energy=np.concatenate((Es_energy,Es_SA_paraenergy+Es_SA_perpenergy))
+    # --- Add Colorbar ---
+    cbar = fig.colorbar(sm, ax=ax, aspect=30, pad=0.03)
+    cbar.set_label('Drive Power (dBm)', fontsize=20)
+    cbar.ax.tick_params(labelsize=16)
 
-# -------------------------------------------
-E_ave = np.mean(np.abs(Es))
-V = 5
-print(E_ave)
-df = pd.read_csv(FILEPATH)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    print(f"Raw data plot saved to: {save_path}")
+    plt.show()
 
-col_n = 'Photon Occupation'
-col_power = 'Power'
-col_loss = 'Loss Tangent'
-col_shift = 'Resonator Frequency'
-col_bias = 'Voltage Frequency'
+# =====================================
+# 3. PROCESSED / COMPONENT PLOTTER
+# =====================================
+def plot_processed_data(input_file, save_path):
+    """Plots the separated tau-TLS and clamped S-TLS loss components."""
+    df = pd.read_csv(input_file)
+    df.columns = df.columns.str.strip()
 
-df['dE_dt'] = 2 * V * df[col_bias] * E_ave / np.sqrt(3)
-df['Eac_sq'] = df[col_n] * (Voltage_at_1Photon**2) * (E_ave**2)
+    df_sorted = df.sort_values(by='dE_dt')
+    unique_powers = np.sort(df_sorted['power'].unique())
 
-df_sorted = df.sort_values(by=col_power)
+    # --- Colorbar Setup ---
+    cmap = cm.tab20c # Or cm.viridis / cm.plasma if preferred
+    norm = mcolors.Normalize(vmin=unique_powers.min(), vmax=unique_powers.max())
+    sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
 
-df_out = pd.DataFrame({
-            "Sweep Rate": df_sorted['dE_dt']*1e-6,
-            "Loss": df_sorted['Loss Tangent'],
-            "Drive Power": df_sorted['Power']
-        }).dropna()
+    fig, (ax1, ax2) = plt.subplots(1, 2, sharex=True, sharey=True, figsize=[16, 9])
+    fig.suptitle('Separated TLS Components vs Bias Sweep Rate', fontsize=24, fontweight='bold')
+    fig.supxlabel(r'$\dot{E}_{DC}$ ($V/(\mu m\cdot s)$)', fontsize=20)
+    fig.supylabel(r'$\tan\delta$ (x $10^6$)', fontsize=20)
+    
+    ax1.set_xscale('log')
+    ax2.set_xscale('log')
 
-df_out.to_csv(SCRIPT_DIR/"loss_sweep.csv", index=False)
+    for P in unique_powers:
+        if P >= -95:
+            subset = df_sorted[df_sorted["power"] == P]
+            color = cmap(norm(P))
+            
+            # Left Subplot: tau-TLS
+            ax1.plot(
+                subset['dE_dt'] * 1e-6, 
+                subset['y_tau'] * 1e6,
+                color=color, 
+                marker='s', 
+                markersize=4,
+                linewidth=1.0
+            )
+            
+            # Right Subplot: Clamped S-TLS
+            ax2.plot(
+                subset['dE_dt'] * 1e-6, 
+                subset['y_S'] * 1e6,
+                color=color, 
+                marker='o', 
+                markersize=4,
+                linewidth=1.0
+            )
 
-unique_powers = df_sorted[col_power].unique()
+    ax1.set_title(r'$\tau$-TLS Component', fontsize=20)
+    ax2.set_title('Clamped S-TLS Component', fontsize=20)
+    
+    ax1.tick_params(labelsize=16)
+    ax2.tick_params(labelsize=16)
 
-colors = [cm.copper(x) for x in np.linspace(0, 1, len(unique_powers))]
+    # --- Add Colorbar to Right Axis ---
+    cbar = fig.colorbar(sm, ax=ax2, aspect=30, pad=0.03)
+    cbar.set_label('Drive Power (dBm)', fontsize=20)
+    cbar.ax.tick_params(labelsize=16)
 
-plt.figure(figsize=[14, 10])
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    print(f"Processed data plot saved to: {save_path}")
+    plt.show()
 
-for i, power in enumerate(unique_powers):
-    subset = df_sorted[df_sorted[col_power] == power]
-
-    plt.scatter(subset['dE_dt']*1e-6, subset[col_loss]*1e6,
-                color=colors[i], label=f'{power}')
-
-    plt.axhline(7.8, color='k', linestyle='--')
-
-    plt.xscale('log')
-    plt.xlabel(r'$\dot{E}_{DC}$ (V/$\mu$m s)', fontsize=20)
-    plt.ylabel(r'$\tan\delta$ (x $10^6$)', fontsize=20)
-    plt.title('TLS Loss Tangent vs. Bias Sweep Rate', fontsize=24)
-
-    plt.legend(title='Drive Power (dBm)', bbox_to_anchor=(1.22, 1), loc='upper right', fontsize=12, title_fontsize=14)
-    plt.tick_params(labelsize=18)
-
-plt.tight_layout()
-plt.show()
+# =====================================
+# 4. EXECUTION
+# =====================================
+if __name__ == "__main__":
+    if PLOT_MODE == "data":
+        plot_raw_data(DATAFILE, PLOTFILE)
+    elif PLOT_MODE == "comp":
+        plot_processed_data(DATAFILE, PLOTFILE)
+    else:
+        print("Final plotting mode not yet configured.")

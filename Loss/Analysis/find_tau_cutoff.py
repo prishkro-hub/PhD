@@ -12,15 +12,15 @@ cfg = get_paths()
 
 DATAFILE = cfg["raw_csv"]
 
-def find_tls_cutoff(df, low_power_thresh=-55.0):
+def find_tls_cutoff(df, min_power=-75.0, max_power=-60.0):
     """
     Calculates the tau-TLS to S-TLS crossover frequency using 
     asymptote intersection on the unsaturated low-power envelope.
     """
     # 1. Isolate fully unsaturated envelope
-    low_pwr = df[df['drive_power'] <= low_power_thresh]
-    y_low = low_pwr.groupby('bias_frequency')['loss_tangent'].mean().values * 1e6
-    nu = np.sort(low_pwr['bias_frequency'].unique())
+    window = df[(df['drive_power'] >= min_power) & (df['drive_power'] <= max_power)]
+    y_low = window.groupby('bias_frequency')['loss_tangent'].mean().values * 1e6
+    nu = np.sort(window['bias_frequency'].unique())
     # eb = low_pwr.groupby('bias_frequency')['dE_dt'].mean().values
     
     # 2. Flat tau-TLS baseline (average of first 3 frequencies)
@@ -48,4 +48,8 @@ def find_tls_cutoff(df, low_power_thresh=-55.0):
 if __name__ == "__main__":
     df = pd.read_csv(DATAFILE)
     cutoffs = find_tls_cutoff(df)
-    print(f"Cutoff at {cutoffs['nu_cutoff_Hz']:.0f} Hz")
+    print(
+        f"Baseline tau-TLS Loss: {cutoffs['tau_baseline_ppm']:.4f}\n"
+        f"S-TLS Loss Slope: {cutoffs['s_tls_slope']:.4f}\n"
+        f"Cutoff at {cutoffs['nu_cutoff_Hz']:.0f} Hz"
+    )
