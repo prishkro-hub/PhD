@@ -19,8 +19,10 @@ DATA_DIR = cfg["data_dir"]
 COMP_DIR = cfg["comp_dir"]
 FINAL_DIR = cfg["comparison_dir"]
 VOLT = f"{cfg['V_bias']}V"
+TAN0 = 9.04   # ppm
+TAN_BG = 3.10e-6
 
-PLOT_MODE = "data"  # Choose from: "data", "comp", "fit"
+PLOT_MODE = "comp"  # Choose from: "data", "comp", "fit"
 if PLOT_MODE == "data":
     DATAFILE = cfg["raw_csv"]
     PLOTFILE = DATA_DIR / "Plots" / "Raw_Plot.png"
@@ -63,6 +65,9 @@ def plot_raw_data(input_file, save_path):
                 linewidth=1.5
             )
 
+    # Add tan_0 reference line
+    ax.axhline(TAN0, color='k', linestyle='--')
+
     # --- Formatting ---
     ax.set_xscale('log')
     ax.set_xlabel(r'Bias Voltage Frequency $\nu$ (Hz)', fontsize=20)
@@ -92,7 +97,7 @@ def plot_processed_data(input_file, save_path):
     unique_powers = np.sort(df_sorted['power'].unique())
 
     # --- Colorbar Setup ---
-    cmap = cm.tab20c # Or cm.viridis / cm.plasma if preferred
+    cmap = cm.plasma # Or cm.viridis / cm.plasma if preferred
     norm = mcolors.Normalize(vmin=unique_powers.min(), vmax=unique_powers.max())
     sm = cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
@@ -129,6 +134,13 @@ def plot_processed_data(input_file, save_path):
                 markersize=4,
                 linewidth=1.0
             )
+    
+    # Add tan_0 reference line
+    ax1.axhline(TAN0, color='k', linestyle='--', label=r"$\tan(\delta_0^\tau)$")
+    ax2.axhline(TAN0, color='k', linestyle='--', label=r"$\tan(\delta_0^\tau)$")
+
+    ax1.legend(loc='upper left')
+    ax2.legend(loc='upper left')
 
     ax1.set_title(r'$\tau$-TLS Component', fontsize=20)
     ax2.set_title('Clamped S-TLS Component', fontsize=20)
