@@ -12,14 +12,14 @@ __pycache__/
 
 # Large Data Files (MCMC Chains, arrays, etc.)
 *.xlsx
-# *.csv
+*.csv
 *.h5
 *.npy
 # *.npz
 
 # Large Outputs (plots, logs, etc.)
-*.png
-*.PNG
+# *.png
+# *.PNG
 *.log
 *.pdf
 *.docx
