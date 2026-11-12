@@ -379,7 +379,7 @@ if __name__ == "__main__":
         )
 
         p_grid = np.geomspace(1.0, 400.0, N_GRID)
-        g_grid = np.linspace(0.0, 4.0, N_GRID)
+        g_grid = np.linspace(1.5, 5.0, N_GRID)
 
         loss_grid_matrix = np.zeros((len(p_grid), len(g_grid), len(GLOBAL_LOSS)), dtype=np.float64)
 

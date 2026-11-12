@@ -29,18 +29,18 @@ GRID_FILE = cfg["s_grid"]
 BACKEND_FILE = cfg["s_backend"]
 CSV_CHAIN_FILE = cfg["s_chain"]
 
-# Select high-power curve where S-TLSs saturate to LZ scaling
-PWR_MIN_DBM = -25.0
-PWR_MAX_DBM = -11.0     # Excludes the -9/-7 dBm bifurcation at 432.9 kHz
-MIN_FREQ_HZ = 35112.0   # Pure S-TLS LZ regime
+# Select high-power S-TLS LZ regime (already preconfigured in the grid)
+PWR_MIN = -35.0     # dBm
+PWR_MAX = -11.0     # dBm
+NU_CUT = 9702.0     # Hz
 
 # Fit target mode:
 #   True  -> Fit normalized ratio (tan_S / tan_S0) directly
 #   False -> Fit raw excess loss tan_S = tan_S0 * unit_loss
-FIT_NORMALIZED_RATIO = True
+FIT_NORMALIZED_RATIO = False
 
 # Optional Gaussian prior on log_k1
-USE_GAMMA1_PRIOR = True
+USE_GAMMA1_PRIOR = False
 PRIOR_LOG_K1_MEAN = 0.7
 PRIOR_LOG_K1_STD = 0.3
 
@@ -58,24 +58,22 @@ P_GRID = grid_archive["p_grid"]
 LOG_P_GRID = np.log10(P_GRID)
 G_GRID = grid_archive["g_grid"]
 
-PWR_ALL = grid_archive["power"]
-NU_ALL = grid_archive["nu"]
+PWR_DATA = grid_archive["power"]
+NU_DATA = grid_archive["nu"]
 
-active_mask = (
-    (PWR_ALL >= PWR_MIN_DBM)
-    & (PWR_ALL <= PWR_MAX_DBM)
-    & (NU_ALL >= MIN_FREQ_HZ)
-)
+# active_mask = (
+#     (PWR_ALL >= PWR_MIN_DBM)
+#     & (PWR_ALL <= PWR_MAX_DBM)
+#     & (NU_ALL >= MIN_FREQ_HZ)
+# )
 
 LOSS_GRID = grid_archive["loss_grid"]
 LOSS_DATA = grid_archive["loss_data"]
-TAN_S0_DATA = grid_archive["tan_s0_data"]# * 0.556396  # Fitted Absorber
+TAN_S0_DATA = grid_archive["tan0_data"]# * 0.556396  # Fitted Absorber
 NORM_LOSS_DATA = LOSS_DATA / TAN_S0_DATA
 
-PWR_DATA = PWR_ALL[active_mask]
-NU_DATA = NU_ALL[active_mask]
-EB_DATA = grid_archive["dE_dt"][active_mask]
-NPH_DATA = grid_archive["n_ph"][active_mask]
+EB_DATA = grid_archive["dE_dt"]
+NPH_DATA = grid_archive["n_ph"]
 
 # Dynamic sigma (std of point-to-point diff along n_ph)
 SIGMA_RAW = np.zeros_like(LOSS_DATA)
@@ -144,50 +142,17 @@ if __name__ == "__main__":
 
         print(
             f"--- STARTING HIGH-POWER S-LOSS MCMC ({SPATIAL_MODE}), "
-            f"Powers [{PWR_MIN_DBM:.0f}, {PWR_MAX_DBM:.0f}] dBm, "
-            f"nu >= {MIN_FREQ_HZ:.0f} Hz, N={len(LOSS_DATA)} ---",
+            f"Powers [{PWR_MIN:.0f}, {PWR_MAX:.0f}] dBm, "
+            f"nu >= {NU_CUT:.0f} Hz, N={len(LOSS_DATA)} ---",
             flush=True
         )
 
         backend = emcee.backends.HDFBackend(str(BACKEND_FILE))
         backend.reset(N_WALKERS, N_DIM)
 
-        # Coarse grid search + Nelder-Mead polish
-        target_y = NORM_LOSS_DATA if FIT_NORMALIZED_RATIO else LOSS_DATA
-        target_sig = SIGMA_NORM if FIT_NORMALIZED_RATIO else SIGMA_RAW
-        base_grid = LOSS_GRID if FIT_NORMALIZED_RATIO else (TAN_S0_DATA[None, None, :] * LOSS_GRID)
-
-        dot_num = np.sum((target_y / (target_sig ** 2)) * base_grid, axis=-1)
-        dot_den = np.sum((base_grid / target_sig) ** 2, axis=-1)
-        A_opt_grid = np.clip(dot_num / np.maximum(dot_den, 1e-30), 0.85, 1.15)
-
-        model_grid = A_opt_grid[:, :, None] * base_grid
-        cost_grid = np.sum(((target_y - model_grid) / target_sig) ** 2, axis=-1)
-        if USE_GAMMA1_PRIOR:
-            cost_grid = cost_grid + ((G_GRID[None, :] - PRIOR_LOG_K1_MEAN) / PRIOR_LOG_K1_STD) ** 2
-
-        best_i, best_j = np.unravel_index(np.argmin(cost_grid), cost_grid.shape)
-        x0_init = np.array([
-            np.clip(G_GRID[best_i], P_MIN * 1.-5, P_MAX * 0.95),
-            np.clip(G_GRID[best_j], G_MIN + 0.1, G_MAX - 0.1),
-            A_opt_grid[best_i, best_j]
-        ])
-
-        res_opt = minimize(
-            lambda x: -log_probability(x),
-            x0_init,
-            method="Nelder-Mead",
-            options={"xatol": 1e-4, "fatol": 1e-4, "maxiter": 1000}
-        )
-
-        p0_center = res_opt.x if np.isfinite(log_probability(res_opt.x)) else x0_init
-        print(
-            f"Initialized at MAP: p_S = {p0_center[0]:.2} D, "
-            f"log_k1_S = {p0_center[1]:.3f} (Gamma_1,S = {10**p0_center[1]:.3f} MHz), "
-            f"A_val = {p0_center[2]:.4f} (log_prob = {log_probability(p0_center):.2f})",
-            flush=True
-        )
-        jitter = np.array([0.03 * p0_center[0], 0.03, 0.005])
+        p0_center = np.array([150.0, 3.0, 1.0])
+        jitter = np.array([2.0, 0.03, 0.005])
+        
         p0 = []
         for _ in range(N_WALKERS):
             while True:
