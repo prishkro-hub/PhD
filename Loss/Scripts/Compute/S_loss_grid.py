@@ -20,9 +20,8 @@ cfg = get_paths()
 
 DATA_DIR = cfg["data_dir"]
 FIT_DIR = cfg["fit_dir"]
-SPATIAL_MODE = cfg["spatial_mode"]
 INPUT_FILE = cfg["processed_csv"]
-OUTPUT_FILE = cfg["S_grid"]
+OUTPUT_FILE = cfg["s_grid"]
 V_BIAS = float(cfg["V_bias"])
 
 # Specific S-TLS Parameters
@@ -40,10 +39,10 @@ DEFAULT_TAN_S0_PARAMS = (4.9283e-8, 1.0556, 5.5915, 1.1094e7)
 #   "burin_ac_only"  -> Step 2 (Analytical): P(r) ~ r^{-3}, Spatial AC (r_ac = r), Uniform DC
 #   "hfss_ac_only"        -> Step 2 (Empirical)   : Spatial AC (r_ac = r), Uniform DC (r_dc = 1, /sqrt(3))
 #   "uniform"        -> Step 1 (Uniform)   : Uniform AC/DC (r_ac = 1, r_dc = 1)
-SPATIAL_MODE = "uniform"
+SPATIAL_FIELD = cfg["spatial_npz"]
+SPATIAL_MODE = cfg["spatial_mode"]
 N_SPATIAL = 12
 N_GRID = 45
-
 
 # =====================================
 # 2. CONSTANTS & QUADRATURE ARRAYS
@@ -70,7 +69,7 @@ COS_U = np.cos(U_N)
 SIN2_U = SIN_U ** 2
 
 # Load HFSS spatial field data
-spatial_data = np.load(DATA_DIR / "hfss_spatial_data.npz")
+spatial_data = np.load(SPATIAL_FIELD)
 E_k = spatial_data["E_k"]
 W_k = spatial_data["W_k"]
 E_mean = float(spatial_data["E_mean"])
@@ -281,7 +280,7 @@ def compute_unit_loss_curve(
 # =====================================
 def get_tan_s0_params(chain_filepath):
     if chain_filepath.exists():
-        df_map = pd.read_csv(chain_filepath).dropna()
+        df_map = pd.read_csv(chain_filepath)
         df_map.set_index("Parameter", inplace=True)
 
         MAP_log_A = df_map.loc["logA", "MAP (Best Fit)"]

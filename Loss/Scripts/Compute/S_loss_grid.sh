@@ -9,7 +9,7 @@
 #$ -e /dev/null
 
 # 1. Setup Logs
-LOGS="Labber/Yaniv/Logs/Computes"
+LOGS="Loss/Logs/Al-Sapp/6789_MHz/5V/Compute"
 mkdir -p ${LOGS}
 
 # 2. Initialize Conda
@@ -39,6 +39,6 @@ LOG_FILE="${LOGS}/S_loss_grid.log"
 echo "--- JOB STARTING AT $(date) ON HOST $HOSTNAME ---" > $LOG_FILE
 
 # 6. Execute with MPI
-mpirun -np 33 --bind-to none python Labber/Yaniv/Data/S_loss_grid.py >> $LOG_FILE 2>&1
+mpirun -np 33 --bind-to none python Loss/Scripts/Compute/S_loss_grid.py >> $LOG_FILE 2>&1
 
 echo "--- JOB FINISHED AT $(date) ---" >> $LOG_FILE
