@@ -40,9 +40,9 @@ NU_CUT = 9702.0     # Hz
 FIT_NORMALIZED_RATIO = False
 
 # Optional Gaussian prior on log_k1
-USE_GAMMA1_PRIOR = False
-PRIOR_LOG_K1_MEAN = 0.7
-PRIOR_LOG_K1_STD = 0.3
+USE_GAMMA1_PRIOR = True
+PRIOR_LOG_K1_MEAN = 3.0
+PRIOR_LOG_K1_STD = 0.5
 
 # MCMC Hyperparameters
 N_DIM = 3
