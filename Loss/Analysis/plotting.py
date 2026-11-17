@@ -22,7 +22,7 @@ VOLT = f"{cfg['V_bias']}V"
 TAN0 = 8.59211339   # ppm
 TAN_BG = 3.10e-6
 
-PLOT_MODE = "comp"  # Choose from: "data", "comp", "fit"
+PLOT_MODE = "data"  # Choose from: "data", "comp", "fit"
 if PLOT_MODE == "data":
     DATAFILE = cfg["raw_csv"]
     PLOTFILE = DATA_DIR / "Plots" / "Raw_Plot.png"
@@ -53,7 +53,7 @@ def plot_raw_data(input_file, save_path):
     fig, ax = plt.subplots(figsize=[12, 9])
     
     for P in unique_powers:
-        if -60 >= P >= -75:
+        if -20 >= P >= -75:
             subset = df_sorted[df_sorted["drive_power"] == P]
             color = cmap(norm(P))
 
@@ -69,7 +69,7 @@ def plot_raw_data(input_file, save_path):
             )
 
     # Add tan_0 reference line
-    # ax.axhline(TAN0, color='k', linestyle='--')
+    ax.axhline(TAN0, color='k', linestyle='--')
 
     # --- Formatting ---
     ax.set_xscale('log')
@@ -84,7 +84,7 @@ def plot_raw_data(input_file, save_path):
     cbar.ax.tick_params(labelsize=16)
 
     plt.tight_layout()
-    plt.savefig(save_path, dpi=300)
+    # plt.savefig(save_path, dpi=300)
     print(f"Raw data plot saved to: {save_path}")
     plt.show()
 
@@ -158,7 +158,7 @@ def plot_processed_data(input_file, save_path):
     cbar.ax.tick_params(labelsize=16)
 
     plt.tight_layout()
-    # plt.savefig(save_path, dpi=300)
+    plt.savefig(save_path, dpi=300)
     print(f"Processed data plot saved to: {save_path}")
     plt.show()
 
