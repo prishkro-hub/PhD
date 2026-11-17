@@ -6,7 +6,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 # Global variables controlling the active pipeline target
 ACTIVE_MATERIAL = "Al-Sapp"
 ACTIVE_RES = "6789_MHz"
-ACTIVE_VOLTAGE = "3V"
+ACTIVE_VOLTAGE = "5V"
 ACTIVE_SPATIAL_MODE = "hfss_histogram"
 
 # Hardware / Physics parameters tied to specific resonators
