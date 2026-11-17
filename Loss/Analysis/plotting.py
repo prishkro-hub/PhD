@@ -19,10 +19,10 @@ DATA_DIR = cfg["data_dir"]
 COMP_DIR = cfg["comp_dir"]
 FINAL_DIR = cfg["comparison_dir"]
 VOLT = f"{cfg['V_bias']}V"
-TAN0 = 9.04   # ppm
+TAN0 = 8.59211339   # ppm
 TAN_BG = 3.10e-6
 
-PLOT_MODE = "data"  # Choose from: "data", "comp", "fit"
+PLOT_MODE = "comp"  # Choose from: "data", "comp", "fit"
 if PLOT_MODE == "data":
     DATAFILE = cfg["raw_csv"]
     PLOTFILE = DATA_DIR / "Plots" / "Raw_Plot.png"
@@ -114,9 +114,9 @@ def plot_processed_data(input_file, save_path):
     ax2.set_xscale('log')
 
     for P in unique_powers:
-        if -7 >= P > -11:
+        if 7 >= P > -110:
             subset = df_sorted[df_sorted["power"] == P]
-            subset = subset[subset["bias_frequency"] >= 9702.0 ]
+            # subset = subset[subset["bias_frequency"] >= 9702.0 ]
             color = cmap(norm(P))
             
             # Left Subplot: tau-TLS
