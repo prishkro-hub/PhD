@@ -9,8 +9,8 @@
 #$ -e /dev/null
 
 # 1. Setup Logs
-LOGS="Loss/Logs/Al-Sapp/6789_MHz/5V/Fit"
-OUTPUTS="Loss/Logs/Al-Sapp/6789_MHz/5V/Fit"
+LOGS="Loss/Logs/Al-Sapp/6789_MHz/3V/Fit"
+OUTPUTS="Loss/Logs/Al-Sapp/6789_MHz/3V/Fit"
 mkdir -p ${LOGS}
 
 # 2. Initialize Conda

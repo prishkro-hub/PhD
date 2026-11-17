@@ -99,6 +99,9 @@ def log_probability(theta):
 
     log_prob = -0.5 * chi2
     
+    # Jeffreys Prior
+    log_prob -= np.log(p_val)
+
     if USE_LEGACY_GAUSSIAN_PRIORS:
         log_prob += -0.5 * ((log_k1_MHz - 0.7) / 0.5) ** 2
         

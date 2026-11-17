@@ -37,11 +37,15 @@ NU_CUT = 9702.0     # Hz
 # Fit target mode:
 #   True  -> Fit normalized ratio (tan_S / tan_S0) directly
 #   False -> Fit raw excess loss tan_S = tan_S0 * unit_loss
-FIT_NORMALIZED_RATIO = False
+FIT_NORMALIZED_RATIO = True
 
-# Optional Gaussian prior on log_k1
-USE_GAMMA1_PRIOR = True
-PRIOR_LOG_K1_MEAN = 3.0
+# Optional Gaussian priors on p_val & log_k1
+USE_P_PRIOR = False
+PRIOR_P_MEAN = 150.0
+PRIOR_P_STD = 10.0
+
+USE_GAMMA1_PRIOR = False
+PRIOR_LOG_K1_MEAN = 2.0
 PRIOR_LOG_K1_STD = 0.5
 
 # MCMC Hyperparameters
@@ -126,9 +130,17 @@ def log_probability(theta):
 
     log_prob = -0.5 * chi2
 
-    if USE_GAMMA1_PRIOR:
-        log_prob += -0.5 * ((log_k1_MHz - PRIOR_LOG_K1_MEAN) / PRIOR_LOG_K1_STD) ** 2
+    # Jeffreys Prior
+    log_prob -= np.log(p_val)
 
+    if USE_P_PRIOR and USE_GAMMA1_PRIOR:
+        log_prob += -0.5 * ((p_val - PRIOR_P_MEAN) / PRIOR_P_STD) ** 2
+        log_prob += -0.5 * ((log_k1_MHz - PRIOR_LOG_K1_MEAN) / PRIOR_LOG_K1_STD) ** 2
+    elif USE_P_PRIOR:
+        log_prob += -0.5 * ((p_val - PRIOR_P_MEAN) / PRIOR_P_STD) ** 2
+    elif USE_GAMMA1_PRIOR:
+        log_prob += -0.5 * ((log_k1_MHz - PRIOR_LOG_K1_MEAN) / PRIOR_LOG_K1_STD) ** 2
+    
     return log_prob
         
 # =====================================

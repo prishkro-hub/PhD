@@ -267,7 +267,7 @@ def compute_unit_loss_curve(
 # =====================================
 # 4. LOAD EXPERIMENTAL DATA & MPI WORKER
 # =====================================
-def load_loss_data(filepath, nu_cut = 9702.0):
+def load_loss_data(filepath, nu_cut = 14834.0):
     df = pd.read_csv(filepath)
     df.columns = df.columns.str.strip()
 

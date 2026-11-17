@@ -99,10 +99,10 @@ else:
     raise ValueError(f"Unknown SPATIAL_MODE: {SPATIAL_MODE}")
 
 # MCMC Parameters
-TAN0 = 9.04e-6
-TAN_BG = 3.10e-6   
-P_BEST = 28.5689            # D
-K1_BEST = 3.0556e-4         # GHz
+TAN0 = 8.59211339e-6
+TAN_BG = 3.05844025e-6   
+P_BEST = 26.9186            # D
+K1_BEST = 1.104587184e-3         # GHz
 
 # =====================================
 # 3. CRACK-NICOLSON & HYBRID LOSS ENGINE

@@ -28,7 +28,7 @@ CHAIN_FILE = FIT_DIR / "tan_0_fit.csv"
 spatial_data = np.load(cfg["spatial_npz"])
 E_mean = float(spatial_data["E_mean"])
 E_vac = float(spatial_data["E_vac"])
-V = 5
+V = cfg["V_bias"]
 
 # E_k = spatial_data["E_k"]
 # W_k = spatial_data["W_k"]
