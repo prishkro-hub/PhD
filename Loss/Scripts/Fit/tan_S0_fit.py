@@ -30,7 +30,7 @@ CSV_CHAIN_FILE = FIT_DIR / f"tan_s0_fit.csv"
 # --- S-regime parameters
 MIN_PWR = -75.0     # dBm
 MAX_PWR = -60.0     # dBm
-NU_CUT = 9702.0     # Hz
+
 # --- MCMC Hyperparameters ---
 N_DIM = 4
 N_WALKERS = 32
@@ -82,14 +82,20 @@ def load_data(filepath):
     S_mask = (
         (df["power"] >= MIN_PWR)
         & (df["power"] <= MAX_PWR)
-        & (df["bias_frequency"] >= NU_CUT)
     )
     sub = df[S_mask].copy()
 
-    # Empirical per-frequency nois across low-power points
-    sub["sigma"] = sub.groupby("bias_frequency")["y_S"].transform(
-        lambda x: max(x.std(), 1.0e-7)
-    )
+    # 1. Empirical per-frequency noise baseline
+    freq_stds = sub.groupby("bias_frequency")["y_S"].std().dropna()
+    sigma_floor = max(float(np.median(freq_stds)), 1.5e-7)
+
+    # 2. Per-frequency band mean to scale fractional uncertainty
+    freq_means = sub.groupby("bias_frequency")["y_S"].transform("mean")
+    f_rel = 0.05    # Equal 5% weight across ESSC slope
+
+    # 3. Hybrid quardature sigma
+    sub["sigma"] = np.sqrt(sigma_floor**2 + (f_rel * np.maximum(freq_means, 0.0))**2)
+
     dE_dt_val = sub["dE_dt"].values
     loss_data_val = sub["y_S"].values
     sigma_val = sub["sigma"].values
@@ -173,10 +179,10 @@ if __name__ == "__main__":
         flat_probs = sampler.get_log_prob(discard=burnin, flat=True)
 
         df = pd.DataFrame({
-            "log_A": flat_chain[:, 0],
+            "logA": flat_chain[:, 0],
             "B": flat_chain[:, 1],
             "C": flat_chain[:, 2],
-            "log_D": flat_chain[:, 3],
+            "logD": flat_chain[:, 3],
             "log_prob": flat_probs
         }).dropna()
 
