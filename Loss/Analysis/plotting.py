@@ -53,7 +53,7 @@ def plot_raw_data(input_file, save_path):
     fig, ax = plt.subplots(figsize=[12, 9])
     
     for P in unique_powers:
-        if -20 >= P >= -75:
+        if -5 >= P >= -35:
             subset = df_sorted[df_sorted["drive_power"] == P]
             color = cmap(norm(P))
 
