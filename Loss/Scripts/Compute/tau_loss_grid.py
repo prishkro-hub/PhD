@@ -20,7 +20,7 @@ cfg = get_paths()
 
 DATA_DIR = cfg["data_dir"]
 SPATIAL_MODE = cfg["spatial_mode"]
-INPUT_FILE = cfg["raw_csv"]
+INPUT_FILE = cfg["clean_csv"]
 OUTPUT_FILE = cfg["tau_grid"]
 V_BIAS = float(cfg["V_bias"])
 

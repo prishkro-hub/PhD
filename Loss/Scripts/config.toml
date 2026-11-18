@@ -4,7 +4,7 @@
 [active]
 material = "Al-Sapp"
 resonator = "6789_MHz"
-voltage = "3V"
+voltage = "10V"
 spatial_mode = "hfss_histogram"
 
 # =============================================
@@ -14,7 +14,7 @@ spatial_mode = "hfss_histogram"
 n_grid = 45
 n_spatial = 12
 n_quad = 40
-nn_cuttoff = 100
+nn_cutoff = 100
 
 # =============================================
 # 3. TAU-TLS STAGE (Per-Voltage nu_cut_hz)

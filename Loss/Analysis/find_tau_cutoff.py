@@ -10,7 +10,7 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 from project_config import get_paths
 cfg = get_paths()
 
-DATAFILE = cfg["raw_csv"]
+DATAFILE = cfg["clean_csv"]
 
 def find_tls_cutoff(df, min_power=-75.0, max_power=-60.0):
     """
