@@ -70,6 +70,7 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=
         # Data & Grids (Read-Only inputs)
         "data_dir": data_dir,
         "raw_csv": data_dir / "resonator_data.csv",
+        "clean_csv": data_dir / "resonator_data_clean.csv",
         "spatial_npz": data_dir.parent / "hfss_spatial_data.npz",
         "tau_grid": data_dir / f"loss_grid_tau_{spatial}.npz",
         "s_grid": data_dir / f"loss_grid_S_{spatial}.npz",
