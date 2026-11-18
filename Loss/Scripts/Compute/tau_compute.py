@@ -25,16 +25,10 @@ INPUT_FILE = cfg["raw_csv"]
 GRID_FILE = cfg["tau_grid"]
 OUTPUT_FILE = cfg["processed_csv"]
 
-# Spatial Integration Mode:
-#   "burin_log_pdf"  -> Step 3 (Analytical): P(r) ~ r^{-3} => flat weight in u = ln(r)
-#   "hfss_histogram" -> Step 3 (Empirical) : All 83 active HFSS bins (|E_k| / E_mean, W_k)
-#   "burin_ac_only"  -> Step 2 (Analytical): P(r) ~ r^{-3}, Spatial AC (r_ac = r), Uniform DC
-#   "hfss_ac_only"        -> Step 2 (Empirical)   : Spatial AC (r_ac = r), Uniform DC (r_dc = 1, /sqrt(3))
-#   "uniform"        -> Step 1 (Uniform)   : Uniform AC/DC (r_ac = 1, r_dc = 1)
 SPATIAL_MODE = cfg["spatial_mode"]
 SPATIAL_FILE = cfg["spatial_npz"]
-N_SPATIAL = 12
-N_GRID = 45
+N_SPATIAL = cfg["tau"]["n_spatial"]
+N_GRID = cfg["tau"]["n_grid"]
 
 # =====================================
 # 2. CONSTANTS & QUADRATURE ARRAYS
@@ -46,9 +40,9 @@ HBAR = 1.054571817e-34
 RABI_COEFF = (DEBYE / HBAR) * 1e-9          # Converts (p [D] * E_ac [v/m]) to GHz
 V_COEFF = (2.0 * DEBYE / HBAR) * 1e-18      # Converts (2 * p [D] * dE_dt [V/(m*s)]) to GHz^2
 
-NN = 100.0  # Stable cutoff
+NN = cfg["solver"]["nn_cutoff"]  # Stable cutoff
 SQRT_NN = np.sqrt(NN)
-N_QUAD = 40
+N_QUAD = cfg["solver"]["n_quad"]
 x_leg, w_leg = leg.leggauss(N_QUAD)
 
 U_N = (np.pi / 4.0) * x_leg + (np.pi / 4.0)

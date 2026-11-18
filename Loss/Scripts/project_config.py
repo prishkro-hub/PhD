@@ -1,43 +1,30 @@
 import os
 import sys
+import shutil
 from pathlib import Path
 
-# The root PhD/Loss directory
-ROOT_DIR = Path(__file__).resolve().parents[1]
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
-# Global variables controlling the active pipeline target
-ACTIVE_MATERIAL = os.environ.get("ACTIVE_MATERIAL", "Al-Sapp")
-ACTIVE_RES = os.environ.get("ACTIVE_RES", "6789_MHz")
-ACTIVE_VOLTAGE = os.environ.get("ACTIVE_VOLTAGE", "3V")
-ACTIVE_SPATIAL_MODE = os.environ.get("ACTIVE_SPATIAL_MODE", "hfss_histogram")
+# Configure root and scripts folders
+SCRIPTS_DIR = Path(__file__).resolve().parent
+ROOT_DIR = SCRIPTS_DIR.parent
+CONFIG_TOML_PATH = SCRIPTS_DIR / "config.toml"
+
+with open(CONFIG_TOML_PATH, "rb") as f:
+    TOML_DATA = tomllib.load(f)
+
+# Global variables controlling the active pipeline target with qsub -v override option
+ACTIVE_MATERIAL = os.environ.get("ACTIVE_MATERIAL", TOML_DATA["active"]["material"])
+ACTIVE_RES = os.environ.get("ACTIVE_RES", TOML_DATA["active"]["resonator"])
+ACTIVE_VOLTAGE = os.environ.get("ACTIVE_VOLTAGE", TOML_DATA["active"]["voltage"])
+ACTIVE_SPATIAL_MODE = os.environ.get("ACTIVE_SPATIAL_MODE", TOML_DATA["active"]["spatial_mode"])
 
 # Hardware / Physics parameters tied to specific resonators
-RESONATOR_SPECS = {
-    "Al-Al2O3": {
-        "6637_MHz": {"f0_GHz": 6.637, "LS_um": 10.0},
-        "6987_MHz": {"f0_GHz": 6.987, "LS_um": 5.0},
-        "7524_MHz": {"f0_GHz": 7.524, "LS_um": 3.0},
-        "8037_MHz": {"f0_GHz": 8.037, "LS_um": 2.0}
-    },
-    "Al-Sapp": {
-        "6427_MHz": {"f0_GHz": 6.427, "LS_um": 10.0},
-        "6789_MHz": {"f0_GHz": 6.789, "LS_um": 5.0},
-        "7308_MHz": {"f0_GHz": 7.308, "LS_um": 3.0},
-        "7835_MHz": {"f0_GHz": 7.835, "LS_um": 2.0}
-    },
-    "Ta-Nb-Sapp": {
-        "6550_MHz": {"f0_GHz": 6.550, "LS_um": 10.0},
-        "6939_MHz": {"f0_GHz": 6.939, "LS_um": 5.0},
-        "7506_MHz": {"f0_GHz": 7.506, "LS_um": 3.0},
-        "8037_MHz": {"f0_GHz": 8.037, "LS_um": 2.0}
-    },
-    "Ta-Sapp": {
-        "6870_MHz": {"f0_GHz": 6.870, "LS_um": 10.0},
-        "7411_MHz": {"f0_GHz": 7.411, "LS_um": 5.0},
-        "8022_MHz": {"f0_GHz": 8.022, "LS_um": 3.0},
-        "8575_MHz": {"f0_GHz": 8.575, "LS_um": 2.0}
-    },
-}
+RESONATOR_SPECS = TOML_DATA["resonators"]
+
 
 def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=ACTIVE_SPATIAL_MODE):
     """Dynamically builds all Data, Output, and Log paths for a specific combination."""
@@ -57,13 +44,28 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=
     for d in [comp_dir / "Plots", fit_dir / "Plots", log_comp_dir, log_fit_dir]:
         d.mkdir(parents=True, exist_ok=True)
 
-    # Extract numerical voltage (e.g. "5V" -> 5.0)
     v_bias = float(volt.replace("V", ""))
+    res_spec = RESONATOR_SPECS[mat][res]
+
+    # Empirical tau-S cutoff frequency for this specific resonator and voltage
+    nu_cut_map = res_spec.get("nu_cut_hz", {})
+    nu_cut_val = float(nu_cut_map.get(volt, 9702.0))
+
+    tau_cfg = dict(TOML_DATA["tau"])
+    tau_cfg["nu_cut"] = nu_cut_val
 
     return {
-        "spec": RESONATOR_SPECS[mat][res],
+        "spec": res_spec,
         "V_bias": v_bias,
         "spatial_mode": spatial,
+        "nu_cut": nu_cut_val,
+
+        # Stage hyperparameter dictionaries
+        "solver": TOML_DATA["solver"],
+        "tau": tau_cfg,
+        "tan_s0": dict(TOML_DATA["tan_s0"]),
+        "s_tls": dict(TOML_DATA["s_tls"]),
+        "analysis": dict(TOML_DATA["analysis"]),
 
         # Data & Grids (Read-Only inputs)
         "data_dir": data_dir,
@@ -89,6 +91,12 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=
 
         "comparison_dir": ROOT_DIR / "Outputs" / mat / res / "Comparisons"
     }
+
+def snapshot_config(target_dir, tag="run"):
+    """Copies config.toml into the output folder for permanent provenance."""
+    dest = Path(target_dir) / f"config_snapshot_{tag}.toml"
+    shutil.copy2(CONFIG_TOML_PATH, dest)
+
 
 if __name__ == "__main__":
     # Called by bas scripts: eval "$(python Loss/Scripts/project_config.py Compute)"

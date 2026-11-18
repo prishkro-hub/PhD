@@ -25,24 +25,31 @@ OUTPUT_FILE = cfg["s_grid"]
 V_BIAS = float(cfg["V_bias"])
 
 # Specific S-TLS Parameters
-MIN_PWR = -35.0     # dBm
-MAX_PWR = -11.0     # dBm
+s_cfg = cfg["s-tls"]
+
+PWR_MIN = s_cfg["pwr_min"]
+PWR_MAX = s_cfg["pwr_max"]
+
+P_MIN = s_cfg["p_min"]
+P_MAX = s_cfg["p_max"]
+G_MIN = s_cfg["g_min"]
+G_MAX = s_cfg["g_max"]
+
+# Specific solver config
+slv_cfg = cfg["solver"]
+
+N_SPATIAL = slv_cfg["n_spatial"]
+N_GRID = slv_cfg["n_grid"]
+NN = slv_cfg["nn_cutoff"]
+N_QUAD = slv_cfg["n_quad"]
 
 BEST_TAN_S0_CSV = FIT_DIR / "Best_Parameters_tan_S0.csv" 
 # Fallback MAP parameters from tan_s0 fit if the CSV is missing
 # DEFAULT_TAN_S0_PARAMS = (4.9283e-8, 1.0556, 5.5915, 1.1094e7)
 DEFAULT_TAN_S0_PARAMS = (10.0**(-8.3815), 1.3516, 6.0752, 10.0**(6.2561))
 
-# Spatial Integration Mode:
-#   "burin_log_pdf"  -> Step 3 (Analytical): P(r) ~ r^{-3} => flat weight in u = ln(r)
-#   "hfss_histogram" -> Step 3 (Empirical) : All 83 active HFSS bins (|E_k| / E_mean, W_k)
-#   "burin_ac_only"  -> Step 2 (Analytical): P(r) ~ r^{-3}, Spatial AC (r_ac = r), Uniform DC
-#   "hfss_ac_only"        -> Step 2 (Empirical)   : Spatial AC (r_ac = r), Uniform DC (r_dc = 1, /sqrt(3))
-#   "uniform"        -> Step 1 (Uniform)   : Uniform AC/DC (r_ac = 1, r_dc = 1)
 SPATIAL_FIELD = cfg["spatial_npz"]
 SPATIAL_MODE = cfg["spatial_mode"]
-N_SPATIAL = 12
-N_GRID = 45
 
 # =====================================
 # 2. CONSTANTS & QUADRATURE ARRAYS
@@ -54,9 +61,7 @@ HBAR = 1.054571817e-34
 RABI_COEFF = (DEBYE / HBAR) * 1e-9          # Converts (p [D] * E_ac [v/m]) to GHz
 V_COEFF = (2.0 * DEBYE / HBAR) * 1e-18      # Converts (2 * p [D] * dE_dt [V/(m*s)]) to GHz^2
 
-NN = 100.0  # Stable cutoff
 SQRT_NN = np.sqrt(NN)
-N_QUAD = 40
 x_leg, w_leg = leg.leggauss(N_QUAD)
 
 U_N = (np.pi / 4.0) * x_leg + (np.pi / 4.0)

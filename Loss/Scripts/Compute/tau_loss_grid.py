@@ -24,14 +24,25 @@ INPUT_FILE = cfg["raw_csv"]
 OUTPUT_FILE = cfg["tau_grid"]
 V_BIAS = float(cfg["V_bias"])
 
-# Spatial Integration Mode:
-#   "burin_log_pdf"  -> Step 3 (Analytical): P(r) ~ r^{-3} => flat weight in u = ln(r)
-#   "hfss_histogram" -> Step 3 (Empirical) : All 83 active HFSS bins (|E_k| / E_mean, W_k)
-#   "burin_ac_only"  -> Step 2 (Analytical): P(r) ~ r^{-3}, Spatial AC (r_ac = r), Uniform DC
-#   "hfss_ac_only"        -> Step 2 (Empirical)   : Spatial AC (r_ac = r), Uniform DC (r_dc = 1, /sqrt(3))
-#   "uniform"        -> Step 1 (Uniform)   : Uniform AC/DC (r_ac = 1, r_dc = 1)
-N_SPATIAL = 12
-N_GRID = 45
+# Specific tau-TLS config
+tau_cfg = cfg["tau"]
+
+NU_CUT = tau_cfg["nu_cut"]
+PWR_MIN = tau_cfg["pwr_min"]
+PWR_MAX = tau_cfg["pwr_max"]
+
+P_MIN = tau_cfg["p_min"]
+P_MAX = tau_cfg["p_max"]
+G_MIN = tau_cfg["g_min"]
+G_MAX = tau_cfg["g_max"]
+
+# Specific solver config
+slv_cfg = cfg["solver"]
+
+N_SPATIAL = slv_cfg["n_spatial"]
+N_GRID = slv_cfg["n_grid"]
+NN = slv_cfg["nn_cutoff"]
+N_QUAD = slv_cfg["n_quad"]
 
 # =====================================
 # 2. CONSTANTS & QUADRATURE ARRAYS
@@ -42,9 +53,7 @@ HBAR = 1.054571817e-34
 RABI_COEFF = (DEBYE / HBAR) * 1e-9          # Converts (p [D] * E_ac [v/m]) to GHz
 V_COEFF = (2.0 * DEBYE / HBAR) * 1e-18      # Converts (2 * p [D] * dE_dt [V/(m*s)]) to GHz^2
 
-NN = 100.0  # Stable cutoff
 SQRT_NN = np.sqrt(NN)
-N_QUAD = 40
 x_leg, w_leg = leg.leggauss(N_QUAD)
 
 U_N = (np.pi / 4.0) * x_leg + (np.pi / 4.0)
@@ -267,7 +276,7 @@ def compute_unit_loss_curve(
 # =====================================
 # 4. LOAD EXPERIMENTAL DATA & MPI WORKER
 # =====================================
-def load_loss_data(filepath, nu_cut = 14834.0):
+def load_loss_data(filepath, nu_cut):
     df = pd.read_csv(filepath)
     df.columns = df.columns.str.strip()
 
@@ -295,7 +304,7 @@ def load_loss_data(filepath, nu_cut = 14834.0):
 
     return drive_data, n_data, loss_data, nu_data, Eac_data, Eb_data
 
-GLOBAL_DRIVE, GLOBAL_NPH, GLOBAL_LOSS, GLOBAL_NU, GLOBAL_E_AC, GLOBAL_EB = load_loss_data(INPUT_FILE)
+GLOBAL_DRIVE, GLOBAL_NPH, GLOBAL_LOSS, GLOBAL_NU, GLOBAL_E_AC, GLOBAL_EB = load_loss_data(INPUT_FILE, NU_CUT)
 
 def compute_grid_point(task):
     i, p_val, j, g_val = task
@@ -323,8 +332,8 @@ if __name__ == "__main__":
         print(f"--- STARTING MPI LOSS TANGENT GRID BUILDER ({SPATIAL_MODE}) ---", flush=True)
         print(f"ACTIVE data points: {len(GLOBAL_LOSS)} | Spatial nodes: {len(R_AC_NODES)}", flush=True)
 
-        p_grid = np.geomspace(1.0, 150.0, N_GRID)
-        g_grid = np.linspace(-2.5, 3.0, N_GRID)
+        p_grid = np.geomspace(P_MIN, P_MAX, N_GRID)
+        g_grid = np.linspace(G_MIN, G_MAX, N_GRID)
 
         loss_grid_matrix = np.zeros((len(p_grid), len(g_grid), len(GLOBAL_LOSS)), dtype=np.float64)
 

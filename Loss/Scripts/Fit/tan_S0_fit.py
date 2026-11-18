@@ -28,14 +28,16 @@ BACKEND_FILE = FIT_DIR / f"tan_s0_fit.h5"
 CSV_CHAIN_FILE = FIT_DIR / f"tan_s0_fit.csv"
 
 # --- S-regime parameters
-MIN_PWR = -75.0     # dBm
-MAX_PWR = -60.0     # dBm
+s0_cfg = cfg["tan_s0"]
+
+MIN_PWR = s0_cfg["pwr_min"]
+MAX_PWR = s0_cfg["pwr_max"]
 
 # --- MCMC Hyperparameters ---
 N_DIM = 4
-N_WALKERS = 32
-N_STEPS = 20000
-N_BATCH = 1000
+N_WALKERS = s0_cfg["n_walkers"]
+N_STEPS = s0_cfg["n_steps"]
+N_BATCH = s0_cfg["n_batch"]
 
 # =====================================
 # 2. INTRINSIC LOSS MODEL
@@ -87,11 +89,11 @@ def load_data(filepath):
 
     # 1. Empirical per-frequency noise baseline
     freq_stds = sub.groupby("bias_frequency")["y_S"].std().dropna()
-    sigma_floor = max(float(np.median(freq_stds)), 1.5e-7)
+    sigma_floor = max(float(np.median(freq_stds)), s0_cfg["sigma_min_floor"])
 
     # 2. Per-frequency band mean to scale fractional uncertainty
     freq_means = sub.groupby("bias_frequency")["y_S"].transform("mean")
-    f_rel = 0.05    # Equal 5% weight across ESSC slope
+    f_rel = s0_cfg["f_rel"]    # Equal 5% weight across ESSC slope
 
     # 3. Hybrid quardature sigma
     sub["sigma"] = np.sqrt(sigma_floor**2 + (f_rel * np.maximum(freq_means, 0.0))**2)

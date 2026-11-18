@@ -34,9 +34,9 @@ USE_LEGACY_GAUSSIAN_PRIORS = True
 
 # MCMC Hyperparameters
 N_DIM = 4
-N_WALKERS = 32
-N_STEPS = 10000
-N_BATCH = 1000
+N_WALKERS = cfg["tau"]["n_walkers"]
+N_STEPS = cfg["tau"]["n_steps"]
+N_BATCH = cfg["tau"]["n_batch"]
 
 # =====================================
 # 2. LOAD PRECOMPUTED GRID & SPLINE
@@ -57,9 +57,9 @@ for nu in np.unique(NU_DATA):
     order = np.argsort(NPH_DATA[mask])
     y_sorted = LOSS_DATA[mask][order]
     if len(y_sorted) > 1:
-        local_sigma = max(np.std(np.diff(y_sorted)) / np.sqrt(2.0), 1.0e-7)
+        local_sigma = max(np.std(np.diff(y_sorted)) / np.sqrt(2.0), cfg["tau"]["sigma_min_floor"])
     else:
-        local_sigma = 2.5e-7
+        local_sigma = cfg["tau"]["sigma_single_fallback"]
     SIGMA_DATA[mask] = local_sigma
 
 # Cubic spline over uniform(log10(p), log10(Gamma_1)) axes

@@ -29,29 +29,26 @@ GRID_FILE = cfg["s_grid"]
 BACKEND_FILE = cfg["s_backend"]
 CSV_CHAIN_FILE = cfg["s_chain"]
 
-# Select high-power S-TLS LZ regime (already preconfigured in the grid)
-PWR_MIN = -35.0     # dBm
-PWR_MAX = -11.0     # dBm
+# S-TLS config parameters
+s_cfg = cfg["s_tls"]
 
-# Fit target mode:
-#   True  -> Fit normalized ratio (tan_S / tan_S0) directly
-#   False -> Fit raw excess loss tan_S = tan_S0 * unit_loss
-FIT_NORMALIZED_RATIO = True
+PWR_MIN = s_cfg["pwr_min"]
+PWR_MAX = s_cfg["pwr_max"]
 
-# Optional Gaussian priors on p_val & log_k1
-USE_P_PRIOR = False
-PRIOR_P_MEAN = 150.0
-PRIOR_P_STD = 10.0
+FIT_NORMALIZED_RATIO = s_cfg["fit_normalized_ratio"]
+USE_P_PRIOR = s_cfg["use_p_prior"]
+PRIOR_P_MEAN = s_cfg["prior_p_mean"]
+PRIOR_P_STD = s_cfg["prior_p_std"]
 
-USE_GAMMA1_PRIOR = True
-PRIOR_LOG_K1_MEAN = 3.0
-PRIOR_LOG_K1_STD = 0.5
+USE_GAMMA1_PRIOR = s_cfg["use_gamma1_prior"]
+PRIOR_LOG_K1_MEAN = s_cfg["prior_log_k1_mean"]
+PRIOR_LOG_K1_STD = s_cfg["prior_log_k1_std"]
 
 # MCMC Hyperparameters
 N_DIM = 3
-N_WALKERS = 32
-N_STEPS = 30000
-N_BATCH = 1000
+N_WALKERS = s_cfg["n_walkers"]
+N_STEPS = s_cfg["n_steps"]
+N_BATCH = s_cfg["n_batch"]
 
 # =====================================
 # 2. LOAD PRECOMPUTED GRID & SPLINE
@@ -63,12 +60,6 @@ G_GRID = grid_archive["g_grid"]
 
 PWR_DATA = grid_archive["power"]
 NU_DATA = grid_archive["nu"]
-
-# active_mask = (
-#     (PWR_ALL >= PWR_MIN_DBM)
-#     & (PWR_ALL <= PWR_MAX_DBM)
-#     & (NU_ALL >= MIN_FREQ_HZ)
-# )
 
 LOSS_GRID = grid_archive["loss_grid"]
 LOSS_DATA = grid_archive["loss_data"]
@@ -90,13 +81,13 @@ for pwr in np.unique(PWR_DATA):
 
     raw_std = np.std(y_raw_sorted)
     norm_std = np.std(y_norm_sorted)
-    raw_floor = max(float(np.median(raw_std)), 1.5e-7)
-    norm_floor = max(float(np.median(norm_std)), 1.5e-7)
+    raw_floor = max(float(np.median(raw_std)), s_cfg["sigma_min_floor"])
+    norm_floor = max(float(np.median(norm_std)), s_cfg["sigma_min_floor"])
 
     raw_mean = np.nanmean(y_raw_sorted)
     norm_mean = np.nanmean(y_norm_sorted)
     
-    f_rel = 0.05
+    f_rel = s_cfg["f_rel"]
 
     SIGMA_RAW[m] = np.sqrt(raw_floor**2 + (f_rel * np.maximum(raw_mean, 0.0))**2)
     SIGMA_NORM[m] = np.sqrt(norm_floor**2 + (f_rel * np.maximum(norm_mean, 0.0))**2)
