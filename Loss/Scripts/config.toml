@@ -1,0 +1,130 @@
+# =========================================
+# 1. ACTIVE PIPELINE TARGET
+# =========================================
+[active]
+material = "Al-Sapp"
+resonator = "6789_MHz"
+voltage = "3V"
+spatial_mode = "hfss_histogram"
+
+# =========================================
+# 2. GRID & SLVER HYPERPARAMETERS
+# =========================================
+[grid]
+n_grid = 45
+n_spatial = 12
+n_quad = 40
+nn_cuttoff = 100
+p_min = 1.0
+p_max = 300.0
+g_min = 1.5
+g_max = 4.5
+
+# =========================================
+# 3. MCMC FITTING STAGES
+# =========================================
+[tau_fit]
+pwr_min = -75.0
+pwr_max = -11.0
+nu_cut = 9702.0
+n_walkers = 32
+n_stteps = 25000
+n_batch = 1000
+
+[tan_s0_fit]
+pwr_min = -75.0
+pwr_max = -60.0
+sigma_floor = 1.5e-7
+f_rel = 0.05
+prior_c_mean = 5.5
+prior_c_std = 1.0
+n_walkers = 32
+n_steps = 20000
+n_batch = 1000
+
+[s_fit]
+pwr_min = -35.0
+pwr_max = -11.0
+nu_cut = 9702.0
+fit_normalized_ratioo = true
+f_rel = 0.05
+raw_floor_min = 0.03
+use_p_prior = false
+prior_p_mean = 150.0
+prior_p_std = 5.0
+use_gamma1_prioor = true
+prior_log_k1_mean = 3.0
+prior_log_k1_std = 0.5
+n_walkers = 32
+n_steps = 30000
+n_batch = 1000
+
+# =========================================
+# 4. POST-PROCESSING & PLOTTING (ANALYSIS)
+# =========================================
+[analysis]
+manual_cut = 800
+min_burn_in = 500
+burn_in_fraction = 0.25
+tau_multuplierburn = 5
+ttau_multiplier_len = 50
+filter_plot_powers = true
+plot_pwr_min = -75.0
+plot_pwr_max = -11.0
+sweep_cuts = [1.698e9, 4.80e10]     # [V/(m*s)]
+power_cuts = [-55.0, -25.0]         # [dBm]
+
+# =========================================
+# 5. RESONATOR HARDWARE SPECIFICATIONS
+# =========================================
+[resonators.Al-Al2O3.6637_MHz]
+f0_GHz = 6.637
+LS_um = 10.0
+[resonators.Al-Al2O3.6987_MHz]
+f0_GHz = 6.987
+LS_um = 5.0
+[resonators.Al-Al2O3.7524_MHz]
+f0_GHz = 7.524
+LS_um = 3.0
+[resonators.Al-Al2O3.8037_MHz]
+f0_GHz = 8.037
+LS_um = 2.0
+
+[resonators.Al-Sapp.6427_MHz]
+f0_GHz = 6.427
+LS_um = 10.0
+[resonators.Al-Sapp.6789_MHz]
+f0_GHz = 6.789
+LS_um = 5.0
+[resonators.Al-Sapp.7308_MHz]
+f0_GHz = 7.308
+LS_um = 3.0
+[resonators.Al-Sapp.7835_MHz]
+f0_GHz = 7.835
+LS_um = 2.0
+
+[resonators.Ta-Nb-Sapp.6550_MHz]
+f0_GHz = 6.550
+LS_um = 10.0
+[resonators.Ta-Nb-Sapp.6939_MHz]
+f0_GHz = 6.939
+LS_um = 5.0
+[resonators.Ta-Nb-Sapp.7506_MHz]
+f0_GHz = 7.506
+LS_um = 3.0
+[resonators.Ta-Nb-Sapp.8037_MHz]
+f0_GHz = 8.037
+LS_um = 2.0
+
+[resonators.Ta-Sapp.6870_MHz]
+f0_GHz = 6.870
+LS_um = 10.0
+[resonators.Ta-Sapp.7411_MHz]
+f0_GHz = 7.411
+LS_um = 5.0
+[resonators.Ta-Sapp.8022_MHz]
+f0_GHz = 8.022
+LS_um = 3.0
+[resonators.Ta-Sapp.8575_MHz]
+f0_GHz = 8.575
+LS_um = 2.0
