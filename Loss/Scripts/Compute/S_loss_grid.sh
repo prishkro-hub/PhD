@@ -1,20 +1,21 @@
 #!/bin/bash
 #$ -S /bin/bash
 #$ -cwd
-#$ -N Loss_Grid
+#$ -N S_Grid
 #$ -q smoshe.q
 #$ -pe shared 65
 #$ -l h_vmem=16G
 #$ -o /dev/null
 #$ -e /dev/null
 
-# 1. Setup Logs
-LOGS="Loss/Logs/Al-Sapp/6789_MHz/5V/Compute"
-mkdir -p ${LOGS}
-
-# 2. Initialize Conda
+# 1. Initialize Conda
 source ~/.bashrc
 conda activate freq_shift_env
+
+# 2. Fetch & setup Logs/Outputs from config
+eval "$(python Loss/Scripts/project_config.py Grid)"
+
+mkdir -p "${LOGS}" "${OUTPUTS}"
 
 # 3. Force prioritizing environment's libraries
 export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH

@@ -1,13 +1,15 @@
+import os
+import sys
 from pathlib import Path
 
 # The root PhD/Loss directory
 ROOT_DIR = Path(__file__).resolve().parents[1]
 
 # Global variables controlling the active pipeline target
-ACTIVE_MATERIAL = "Al-Sapp"
-ACTIVE_RES = "6789_MHz"
-ACTIVE_VOLTAGE = "5V"
-ACTIVE_SPATIAL_MODE = "hfss_histogram"
+ACTIVE_MATERIAL = os.environ.get("ACTIVE_MATERIAL", "Al-Sapp")
+ACTIVE_RES = os.environ.get("ACTIVE_RES", "6789_MHz")
+ACTIVE_VOLTAGE = os.environ.get("ACTIVE_VOLTAGE", "3V")
+ACTIVE_SPATIAL_MODE = os.environ.get("ACTIVE_SPATIAL_MODE", "hfss_histogram")
 
 # Hardware / Physics parameters tied to specific resonators
 RESONATOR_SPECS = {
@@ -38,18 +40,21 @@ RESONATOR_SPECS = {
 }
 
 def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=ACTIVE_SPATIAL_MODE):
-    """Dynamically builds all Data and Output paths for a specific combination."""
+    """Dynamically builds all Data, Output, and Log paths for a specific combination."""
 
     # 1. Base Paths
     data_dir = ROOT_DIR / "Data" / mat / res / volt
     out_base = ROOT_DIR / "Outputs" / mat / res / volt
+    log_base = ROOT_DIR / "Logs" / mat / res / volt
 
     # 2. Output Paths (Compute & Fit)
     comp_dir = out_base / "Compute"
     fit_dir = out_base / "Fit"
+    log_comp_dir = log_base / "Compute"
+    log_fit_dir = log_base / "Fit"
 
     # Ensure output folders exist before before the scripts try to write to them
-    for d in [comp_dir / "Plots", fit_dir / "Plots"]:
+    for d in [comp_dir / "Plots", fit_dir / "Plots", log_comp_dir, log_fit_dir]:
         d.mkdir(parents=True, exist_ok=True)
 
     # Extract numerical voltage (e.g. "5V" -> 5.0)
@@ -62,7 +67,7 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=
 
         # Data & Grids (Read-Only inputs)
         "data_dir": data_dir,
-        "raw_csv": data_dir / f"resonator_data.csv",
+        "raw_csv": data_dir / "resonator_data.csv",
         "spatial_npz": data_dir.parent / "hfss_spatial_data.npz",
         "tau_grid": data_dir / f"loss_grid_tau_{spatial}.npz",
         "s_grid": data_dir / f"loss_grid_S_{spatial}.npz",
@@ -71,6 +76,8 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=
         # Computed Outputs & Chains
         "comp_dir": comp_dir,
         "fit_dir": fit_dir,
+        "log_comp_dir": log_comp_dir,
+        "log_fit_dir": log_fit_dir,
         "processed_csv": comp_dir / "processed_compute.csv",
         "final_csv": comp_dir / "final_results.csv",
 
@@ -82,3 +89,21 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=
 
         "comparison_dir": ROOT_DIR / "Outputs" / mat / res / "Comparisons"
     }
+
+if __name__ == "__main__":
+    # Called by bas scripts: eval "$(python Loss/Scripts/project_config.py Compute)"
+    mode = sys.argv[1].strip().lower() if len(sys.argv) > 1 else "compute"
+    cfg = get_paths()
+
+    if mode in ("fit", "fits"):
+        logs_path = cfg["log_fit_dir"]
+        outs_path = cfg["fit_dir"]
+    elif mode in ("grid", "grids"):
+        logs_path = cfg["log_comp_dir"]
+        outs_path = cfg["data_dir"]
+    else:
+        logs_path = cfg["log_comp_dir"]
+        outs_path = cfg["comp_dir"]
+
+    print(f'export LOGS="{logs_path}"')
+    print(f'export OUTPUTS="{outs_path}"')

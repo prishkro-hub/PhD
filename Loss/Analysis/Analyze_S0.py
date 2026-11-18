@@ -91,7 +91,7 @@ def load_chain_data(chain_path, n_walkers=32, ndim=3):
     # Fallback for older CSV chains
     df = pd.read_csv(chain_path)
     df.columns = df.columns.str.strip()
-    cols = ["log_A", "B", "C", "log_D"]
+    cols = ["logA", "B", "C", "logD"]
     if not all(c in df.columns for c in cols):
         print(f"Error: CSV missing required columns. Found: {df.columns.to_list()}")
         return None, None
@@ -186,7 +186,7 @@ def analyze_bloch_fit(chain_file):
     # 3. Autocorrelation Analysis
     labels_text = ["logA", "B", "C", "logD"]
     units = ["", "", "", ""]
-    plot_labels = [r"\log_{10}A", "B", "C", r"\log_{10}D (V/$\mu$m s)"]
+    plot_labels = [r"$\log_{10}$A", "B", "C", r"$\log_{10}$D (V/$\mu$m s)"]
 
     try:
         tau_array = emcee.autocorr.integrated_time(chain, tol=0)

@@ -8,14 +8,14 @@
 #$ -o /dev/null
 #$ -e /dev/null
 
-# 1. Setup Logs
-LOGS="Loss/Logs/Al-Sapp/6789_MHz/3V/Fit"
-OUTPUTS="Loss/Logs/Al-Sapp/6789_MHz/3V/Fit"
-mkdir -p ${LOGS}
-
-# 2. Initialize Conda
+# 1. Initialize Conda
 source ~/.bashrc
 conda activate freq_shift_env
+
+# 2. Fetch & setup Logs/Outputs from config
+eval "$(python Loss/Scripts/project_config.py Fit)"
+
+mkdir -p "${LOGS}" "${OUTPUTS}"
 
 # 3. Force prioritizing environment's libraries
 export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH

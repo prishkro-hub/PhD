@@ -8,14 +8,14 @@
 #$ -o /dev/null
 #$ -e /dev/null
 
-# 1. Setup Logs
-LOGS="Loss/Logs/Al-Sapp/6789_MHz/5V/Compute"
-OUTPUTS="Loss/Outputs/Al-Sapp/6789_MHz/5V/Compute"
-mkdir -p ${LOGS}
-
-# 2. Initialize Conda
+# 1. Initialize Conda
 source ~/.bashrc
 conda activate freq_shift_env
+
+# 2. Fetch & setup Logs/Outputs from config
+eval "$(python Loss/Scripts/project_config.py Compute)"
+
+mkdir -p "${LOGS}" "${OUTPUTS}"
 
 # 3. Force prioritizing environment's libraries
 export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
@@ -37,9 +37,10 @@ export OMPI_MCA_mtl="^ofi"
 # 6. Define Specific Output Logs
 LOG_FILE="${LOGS}/Tau_Compute.log"
 
-echo "--- JOB STARTING AT $(date) ON HOST $HOSTNAME ---" > $LOG_FILE
+echo "--- JOB STARTING AT $(date) ON HOST $HOSTNAME ---" > "$LOG_FILE"
+echo "Target Logs: ${LOGS} | Target Outputs: ${OUTPUTS}" >> "$LOG_FILE"
 
 # 6. Execute
-python -u Loss/Scripts/Compute/tau_compute.py >> $LOG_FILE 2>&1
+python -u Loss/Scripts/Compute/tau_compute.py >> "$LOG_FILE" 2>&1
 
-echo "--- JOB FINISHED AT $(date) ---" >> $LOG_FILE
+echo "--- JOB FINISHED AT $(date) ---" >> "$LOG_FILE"

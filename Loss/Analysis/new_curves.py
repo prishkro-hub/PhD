@@ -1,28 +1,61 @@
+import sys
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import matplotlib.colors as mcolors
-from pathlib import Path
 
 # =====================================
 # 1. DIRECTORY & CONFIGURATION
 # =====================================
-# Inject the root 'Scripts' directory into Python's path and import the config
-SCRIPTS_DIR = Path(__file__).parents[1] / "Scripts"
+# Resolve the root 'Scripts' directory whether run from Scripts/ or a subfolder
+THIS_DIR = Path(__file__).resolve().parent
+SCRIPTS_DIR = THIS_DIR if (THIS_DIR / "project_config.py").exists() else THIS_DIR.parent
+if not (SCRIPTS_DIR / "project_config.py").exists() and (SCRIPTS_DIR / "Scripts").exists():
+    SCRIPTS_DIR = SCRIPTS_DIR / "Scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
+
 from project_config import get_paths
 
 # Fetch paths for the currently active route
 cfg = get_paths()
-COMP_DIR = cfg["comp_dir"]
-PLOTS_DIR = COMP_DIR / "Plots"
+COMP_DIR = Path(cfg["comp_dir"])
+FIT_DIR = Path(cfg["fit_dir"])
+COMPARISON_DIR = Path(cfg["comparison_dir"])
+DATAFILE = Path(cfg["final_csv"])          # comp_dir / "final_results.csv"
+
 SPATIAL_MODE = cfg["spatial_mode"]
+V_BIAS = cfg.get("V_bias", 5.0)
+V_TAG = f"{float(V_BIAS):g}V" if isinstance(V_BIAS, (int, float)) or str(V_BIAS).replace(".", "").isdigit() else str(V_BIAS)
 
-DATAFILE = COMP_DIR / "S_compute.csv"
+PLOTS_DIR = COMP_DIR / "Plots"
+PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+COMPARISON_DIR.mkdir(parents=True, exist_ok=True)
 
-ALL_PLOTFILE = PLOTS_DIR / "Loss_Plot.png"
-S_PLOTFILE = PLOTS_DIR / "S_Loss_Plot.png"
+# Local voltage-folder plots & resonator-level comparison plots
+LOCAL_PLOTFILE = PLOTS_DIR / "Loss_Plot.png"
+COMP_PLOTFILE = COMPARISON_DIR / f"Loss_Plot_{V_TAG}_{SPATIAL_MODE}.png"
+
+# Fallback tau-TLS parameters (in absolute units) if summary CSV is not found
+DEFAULT_TAN0_TAU = 10.0**(-5.0440)
+DEFAULT_TAN_BG = 10.0**(-5.5085)
+
+
+def _load_tau_params(fit_dir):
+    """Loads tan0_tau and tan_bg from the tau-TLS best-fit CSV if available."""
+    for candidate in ("Best_Parameters_tau.csv", "Best_Parameters_Tau.csv", "tau_best_params.csv"):
+        csv_path = fit_dir / candidate
+        if csv_path.exists():
+            try:
+                df_p = pd.read_csv(csv_path).set_index("Parameter")
+                tan0 = 10.0 ** float(df_p.loc["log_tan0", "MAP (Best Fit)"])
+                tan_bg = 10.0 ** float(df_p.loc["log_tan_bg", "MAP (Best Fit)"])
+                return tan0, tan_bg
+            except Exception:
+                pass
+    return DEFAULT_TAN0_TAU, DEFAULT_TAN_BG
+
 
 def _regime_stats(res_ppm, y_exp_ppm, global_range_ppm):
     rmse = float(np.sqrt(np.mean(res_ppm ** 2)))
@@ -48,24 +81,37 @@ def _regime_stats(res_ppm, y_exp_ppm, global_range_ppm):
 def plot_curves_new(
     input_file,
     output_file=None,
+    comparison_file=None,
     sweep_cuts=(1.698e9, 4.80e10),   # [V/(m*s)] -> 1.70e3 and 4.80e4 V/(um*s)
     power_cuts=(-55.0, -25.0),       # [dBm]     -> Low / Mid / High drive power
 ):
     df = pd.read_csv(input_file)
+
+    # Optional stripping of noisy params
+    # df = df[(df["power"] >= -75.0) & (df["power"] <= -11.0)].copy()
+    
     df.columns = df.columns.str.strip()
 
     if "y_S" not in df.columns:
         raise KeyError("Column 'y_S' not found in the input CSV.")
 
+    tan0_tau, tan_bg = _load_tau_params(FIT_DIR)
+
     df_sorted = df.sort_values(by=["power", "dE_dt"]).copy()
-    df_sorted["y_total"] = df_sorted["y_tau"] + df_sorted["y_S"]
+
+    # Reconstruct total model loss, adding tan_bg if y_tau is purely the saturable component
+    if "y_total" not in df_sorted.columns:
+        if df_sorted["y_tau"].min() < 0.5 * tan_bg:
+            df_sorted["y_total"] = df_sorted["y_tau"] + df_sorted["y_S"] + tan_bg
+        else:
+            df_sorted["y_total"] = df_sorted["y_tau"] + df_sorted["y_S"]
+
     unique_powers = np.sort(df_sorted["power"].unique())
 
     # --- 1. Global & 3-Regime Fit Quality Calculations ---
     y_exp_ppm = df_sorted["y_exp"].to_numpy() * 1e6
     y_tot_ppm = df_sorted["y_total"].to_numpy() * 1e6
     res_ppm = y_exp_ppm - y_tot_ppm
-    res_e5 = res_ppm * 0.1
     global_range_ppm = float(np.max(y_exp_ppm) - np.min(y_exp_ppm))
 
     glob_stats = _regime_stats(res_ppm, y_exp_ppm, global_range_ppm)
@@ -119,7 +165,7 @@ def plot_curves_new(
 
     cmap = cm.plasma
     norm = mcolors.Normalize(vmin=unique_powers.min(), vmax=unique_powers.max())
-    TAN0 = 1.14169475  # Equilibrium tau-TLS plateau (x 10^-5)
+    TAN_PLATEAU = (tan0_tau + tan_bg) * 1e5  # Unsaturated slow-sweep plateau (x 10^-5)
 
     # --- 3. Plot Curves Grouped by Drive Power ---
     for P in unique_powers:
@@ -127,7 +173,7 @@ def plot_curves_new(
             continue
         subset = df_sorted[df_sorted["power"] == P]
         x_eb = subset["dE_dt"].to_numpy() * 1e-6       # V / (um * s)
-        y_exp_sub = subset["y_exp"].to_numpy() * 1e5   # x 10^-5
+        y_exp_sub = subset["y_exp"].to_numpy() * 1e5   # 10^-5
         y_tot_sub = subset["y_total"].to_numpy() * 1e5
         res_sub = y_exp_sub - y_tot_sub
         col = cmap(norm(P))
@@ -138,12 +184,12 @@ def plot_curves_new(
 
     # --- 4. Reference Lines & Side-by-Side Regime Metric Boxes ---
     ax_main.axhline(
-        TAN0, color="k", linestyle=":", linewidth=1.8,
-        label=rf"$\tan\delta_0^\tau = {TAN0:.2f} \times 10^{{-5}}$"
+        TAN_PLATEAU, color="k", linestyle=":", linewidth=1.8,
+        label=rf"$\tan\delta_0^\tau + \tan\delta_{{\mathrm{{bg}}}} = {TAN_PLATEAU:.2f} \times 10^{{5}}$"
     )
     ax_main.axvline(
         sw_cut1 * 1e-6, color="crimson", linestyle="-.", linewidth=1.5, alpha=0.75,
-        label=rf"Slow/Mid Sweep Cut (${sw_cut1*1e-6:.2f}\times 10^3\ \mathrm{{V/(\mu m\cdot s)}}$)"
+        label=rf"Slow/Mid Sweep Cut (${sw_cut1*1e-9:.2f}\times 10^3\ \mathrm{{V/(\mu m\cdot s)}}$)"
     )
     ax_main.axvline(
         sw_cut2 * 1e-6, color="teal", linestyle="-.", linewidth=1.5, alpha=0.75,
@@ -153,7 +199,7 @@ def plot_curves_new(
     ax_res.axvline(sw_cut2 * 1e-6, color="teal", linestyle="-.", linewidth=1.2, alpha=0.6)
 
     ax_main.scatter([], [], color="gray", s=35, label=r"Experimental Data ($y_{\mathrm{exp}}$)")
-    ax_main.plot([], [], color="gray", linestyle="--", linewidth=1.8, label=r"Total Model ($y_\tau + y_S$)")
+    ax_main.plot([], [], color="gray", linestyle="--", linewidth=1.8, label=r"Total Model ($y_\tau + y_S + \tan\delta_{\mathrm{bg}}$)")
 
     sw_vals = list(sweep_results.values())
     pw_vals = list(power_results.values())
@@ -197,9 +243,9 @@ def plot_curves_new(
 
     ax_main.set_xscale("log")
     ax_main.set_ylim(-0.08, 3.05)
-    ax_main.set_ylabel(r"Loss Tangent $\tan\delta$ ($\times 10^{-5}$)", fontsize=16)
+    ax_main.set_ylabel(r"Loss Tangent $\tan\delta$ ($10^{-5}$)", fontsize=16)
     ax_main.set_title(
-        r"Total TLS Loss Tangent ($\tau$-TLS + $S$-TLS) Across Sweep Rate & Drive Power Regimes",
+        rf"Total TLS Loss Tangent ($\tau$-TLS + $S$-TLS) — {V_TAG}, {SPATIAL_MODE}",
         fontsize=17.5, fontweight="bold", pad=12
     )
     ax_main.legend(loc="upper left", fontsize=10.5, framealpha=0.94, ncol=2)
@@ -213,7 +259,7 @@ def plot_curves_new(
     ax_res.axhline(-rmse_e5_glob, color="crimson", linestyle=":", linewidth=1.0, alpha=0.7)
     ax_res.set_xscale("log")
     ax_res.set_xlabel(r"Bias Field Sweep Rate $\dot{E}_b$ [$\mathrm{V / (\mu m \cdot s)}$]", fontsize=16)
-    ax_res.set_ylabel(r"Residual ($\times 10^{-5}$)", fontsize=13)
+    ax_res.set_ylabel(r"Residual ($10^{-5}$)", fontsize=13)
     ax_res.tick_params(labelsize=13)
     ax_res.grid(True, which="both", linestyle="--", alpha=0.3)
 
@@ -226,9 +272,16 @@ def plot_curves_new(
     cbar.ax.axhline(pw_cut1, color="white", linestyle="--", linewidth=1.8)
     cbar.ax.axhline(pw_cut2, color="black", linestyle="--", linewidth=1.8)
 
-    save_target = output_file if output_file is not None else S_PLOTFILE
-    fig.savefig(save_target, dpi=300, bbox_inches="tight")
-    plt.show()
+    # Save to both the voltage-specific Plots folder and the resonator-level Comparisons folder
+    save_local = output_file if output_file is not None else LOCAL_PLOTFILE
+    fig.savefig(save_local, dpi=300, bbox_inches="tight")
+    print(f"\nSaved local plot to: {save_local}")
+
+    save_comp = comparison_file if comparison_file is not None else COMP_PLOTFILE
+    if save_comp is not None and Path(save_comp) != Path(save_local):
+        fig.savefig(save_comp, dpi=300, bbox_inches="tight")
+        print(f"Saved comparison plot to: {save_comp}")
+
 
 if __name__ == "__main__":
-    plot_curves_new(DATAFILE, S_PLOTFILE)
+    plot_curves_new(DATAFILE, LOCAL_PLOTFILE, COMP_PLOTFILE)

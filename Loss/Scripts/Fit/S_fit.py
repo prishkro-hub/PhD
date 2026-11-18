@@ -32,7 +32,6 @@ CSV_CHAIN_FILE = cfg["s_chain"]
 # Select high-power S-TLS LZ regime (already preconfigured in the grid)
 PWR_MIN = -35.0     # dBm
 PWR_MAX = -11.0     # dBm
-NU_CUT = 9702.0     # Hz
 
 # Fit target mode:
 #   True  -> Fit normalized ratio (tan_S / tan_S0) directly
@@ -45,13 +44,13 @@ PRIOR_P_MEAN = 150.0
 PRIOR_P_STD = 10.0
 
 USE_GAMMA1_PRIOR = True
-PRIOR_LOG_K1_MEAN = 2.0
+PRIOR_LOG_K1_MEAN = 3.0
 PRIOR_LOG_K1_STD = 0.5
 
 # MCMC Hyperparameters
 N_DIM = 3
 N_WALKERS = 32
-N_STEPS = 35000
+N_STEPS = 30000
 N_BATCH = 1000
 
 # =====================================
@@ -83,17 +82,32 @@ NPH_DATA = grid_archive["n_ph"]
 SIGMA_RAW = np.zeros_like(LOSS_DATA)
 SIGMA_NORM = np.zeros_like(NORM_LOSS_DATA)
 
-for pwr_val in np.unique(PWR_DATA):
-    m = (PWR_DATA == pwr_val)
+for pwr in np.unique(PWR_DATA):
+    m = (PWR_DATA == pwr)
     order = np.argsort(NU_DATA[m])
     y_raw_sorted = LOSS_DATA[m][order]
     y_norm_sorted = NORM_LOSS_DATA[m][order]
 
-    sig_r = max(np.std(np.diff(y_raw_sorted)) / np.sqrt(2.0), 2.0e-7) if len(y_raw_sorted) > 1 else 5.0e-7
-    sig_n = max(np.std(np.diff(y_norm_sorted)) / np.sqrt(2.0), 0.03) if len(y_norm_sorted) > 1 else 0.05
+    raw_std = np.std(y_raw_sorted)
+    norm_std = np.std(y_norm_sorted)
+    raw_floor = max(float(np.median(raw_std)), 1.5e-7)
+    norm_floor = max(float(np.median(norm_std)), 1.5e-7)
 
-    SIGMA_RAW[m] = sig_r
-    SIGMA_NORM[m] = sig_n
+    raw_mean = np.nanmean(y_raw_sorted)
+    norm_mean = np.nanmean(y_norm_sorted)
+    
+    f_rel = 0.05
+
+    SIGMA_RAW[m] = np.sqrt(raw_floor**2 + (f_rel * np.maximum(raw_mean, 0.0))**2)
+    SIGMA_NORM[m] = np.sqrt(norm_floor**2 + (f_rel * np.maximum(norm_mean, 0.0))**2)
+
+
+# # Hybrid per-point uncertainty
+# SIGMA_FLOOR = 2.0e-7    # VNA noise floor
+# F_REL = 0.05            # 5% fractional loss
+
+# SIGMA_RAW = np.sqrt(SIGMA_FLOOR**2 + (F_REL * LOSS_DATA)**2)
+# SIGMA_NORM = np.sqrt(SIGMA_FLOOR**2 + (F_REL * NORM_LOSS_DATA)**2)
 
 # Cubic spline over uniform(log10(p), log10(Gamma_1)) axes
 LOSS_SPLINE = RegularGridInterpolator(
@@ -130,8 +144,8 @@ def log_probability(theta):
 
     log_prob = -0.5 * chi2
 
-    # Jeffreys Prior
-    log_prob -= np.log(p_val)
+    # Tan_S0 is already optimized
+    log_prob += -0.5 * ((A_val - 1.0) / 0.05) ** 2
 
     if USE_P_PRIOR and USE_GAMMA1_PRIOR:
         log_prob += -0.5 * ((p_val - PRIOR_P_MEAN) / PRIOR_P_STD) ** 2
@@ -155,7 +169,7 @@ if __name__ == "__main__":
         print(
             f"--- STARTING HIGH-POWER S-LOSS MCMC ({SPATIAL_MODE}), "
             f"Powers [{PWR_MIN:.0f}, {PWR_MAX:.0f}] dBm, "
-            f"nu >= {NU_CUT:.0f} Hz, N={len(LOSS_DATA)} ---",
+            f"N={len(LOSS_DATA)} ---",
             flush=True
         )
 
