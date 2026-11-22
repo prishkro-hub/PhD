@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 import shutil
 from pathlib import Path
 
@@ -24,6 +25,51 @@ ACTIVE_SPATIAL_MODE = os.environ.get("ACTIVE_SPATIAL_MODE", TOML_DATA["active"][
 
 # Hardware / Physics parameters tied to specific resonators
 RESONATOR_SPECS = TOML_DATA["resonators"]
+
+
+def update_config_cutoff(new_cutoff_hz, mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE):
+    """
+    Updates nu_cut_hz for the specified (mat, res, volt) in-place inside config.toml
+    without stripping comments or altering file formatting.
+    """
+    volt_str = f"{float(str(volt).upper().replace('V', '')):g}V"
+    val_str = f"{float(new_cutoff_hz):.1f}"
+
+    toml_text = CONFIG_TOML_PATH.read_text(encoding="utf-8")
+
+    # Locate the target [resonators.<mat>.<res>] block
+    block_pattern = re.compile(
+        rf"(\[resonators\.{re.escape(mat)}\.{re.escape(res)}\].*?)(?=\n\[|\Z)",
+        re.DOTALL
+    )
+    match = block_pattern.search(toml_text)
+    if not match:
+        raise KeyError(f"Section [resonators.{mat}.{res}] not found in {CONFIG_TOML_PATH}")
+
+    block = match.group(1)
+    volt_pattern = re.compile(rf'("{re.escape(volt_str)}"\s*=\s*)([0-9.eE+-]+)')
+
+    if "nu_cut_hz" in block and volt_pattern.search(block):
+        # Update existing voltage key in-place
+        new_block = volt_pattern.sub(rf"\g<1>{val_str}", block, count=1)
+    elif "nu_cut_hz" in block:
+        # Insert new voltage key into existing inline table
+        new_block = re.sub(
+            r"(nu_cut_hz\s*=\s*\{[^}]*?)(\s*\})",
+            rf'\1, "{volt_str}" = {val_str}\2',
+            block,
+            count=1
+        )
+    else:
+        # Append nu_cut_hz inline table to the resonator block
+        new_block = block.rstrip() + f'\nnu_cut_hz = {{ "{volt_str}" = {val_str} }}\n'
+
+    updated_text = toml_text[:match.start(1)] + new_block + toml_text[match.end(1):]
+    CONFIG_TOML_PATH.write_text(updated_text, encoding="utf-8")
+
+    # Sync in-memory dictionary as well
+    TOML_DATA["resonators"][mat][res].setdefault("nu_cut_hz", {})[volt_str] = round(float(new_cutoff_hz), 1)
+    print(f"[CONFIG UPDATED] [resonators.{mat}.{res}] nu_cut_hz['{volt_str}'] = {val_str} Hz")
 
 
 def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=ACTIVE_SPATIAL_MODE):

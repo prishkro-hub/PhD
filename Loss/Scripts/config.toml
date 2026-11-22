@@ -118,7 +118,7 @@ nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
 [resonators.Al-Sapp.6789_MHz]
 f0_GHz = 6.789
 LS_um = 5.0
-nu_cut_hz = {"3V" = 14834.0, "5V" = 9702.0, "10V" = 9702.0 }
+nu_cut_hz = {"3V" = 14834.3, "5V" = 9702.2, "10V" = 407.9 }
 
 [resonators.Al-Sapp.7308_MHz]
 f0_GHz = 7.308
