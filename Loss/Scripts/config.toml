@@ -4,7 +4,7 @@
 [active]
 material = "Al-Sapp"
 resonator = "6789_MHz"
-voltage = "10V"
+voltage = "5V"
 spatial_mode = "hfss_histogram"
 
 # =============================================
@@ -31,7 +31,7 @@ sigma_min_floor = 1.0e-7
 sigma_single_fallback = 2.5e-7
 # MCMC Hyperparameters
 n_walkers = 32
-n_stteps = 25000
+n_steps = 25000
 n_batch = 1000
 
 # =============================================
