@@ -25,7 +25,7 @@ OUTPUT_FILE = cfg["s_grid"]
 V_BIAS = float(cfg["V_bias"])
 
 # Specific S-TLS Parameters
-s_cfg = cfg["s-tls"]
+s_cfg = cfg["s_tls"]
 
 PWR_MIN = s_cfg["pwr_min"]
 PWR_MAX = s_cfg["pwr_max"]
@@ -46,7 +46,7 @@ N_QUAD = slv_cfg["n_quad"]
 BEST_TAN_S0_CSV = FIT_DIR / "Best_Parameters_tan_S0.csv" 
 # Fallback MAP parameters from tan_s0 fit if the CSV is missing
 # DEFAULT_TAN_S0_PARAMS = (4.9283e-8, 1.0556, 5.5915, 1.1094e7)
-DEFAULT_TAN_S0_PARAMS = (10.0**(-8.3815), 1.3516, 6.0752, 10.0**(6.2561))
+DEFAULT_TAN_S0_PARAMS = (10.0**(-7.8157), 1.1361, 6.1527, 10.0**(6.3521))
 
 SPATIAL_FIELD = cfg["spatial_npz"]
 SPATIAL_MODE = cfg["spatial_mode"]
@@ -320,8 +320,8 @@ def load_loss_data(filepath, chain_filepath):
     valid_mask = (
         np.isfinite(n_data)
         & np.isfinite(loss_data)
-        & (pwr_data >= MIN_PWR)
-        & (pwr_data <= MAX_PWR)
+        & (pwr_data >= PWR_MIN)
+        & (pwr_data <= PWR_MAX)
     )
 
     eb_active = dE_dt[valid_mask]

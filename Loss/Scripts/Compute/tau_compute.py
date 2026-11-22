@@ -27,8 +27,8 @@ OUTPUT_FILE = cfg["processed_csv"]
 
 SPATIAL_MODE = cfg["spatial_mode"]
 SPATIAL_FILE = cfg["spatial_npz"]
-N_SPATIAL = cfg["tau"]["n_spatial"]
-N_GRID = cfg["tau"]["n_grid"]
+N_SPATIAL = cfg["solver"]["n_spatial"]
+N_GRID = cfg["solver"]["n_grid"]
 
 # =====================================
 # 2. CONSTANTS & QUADRATURE ARRAYS
@@ -93,10 +93,10 @@ else:
     raise ValueError(f"Unknown SPATIAL_MODE: {SPATIAL_MODE}")
 
 # MCMC Parameters
-TAN0 = 8.59211339e-6
-TAN_BG = 3.05844025e-6   
-P_BEST = 26.9186            # D
-K1_BEST = 1.104587184e-3         # GHz
+# TAN_BG = 3.05844025e-6   
+TAN0 = 10.0**(-4.9274)
+P_BEST = 12.7585            # D
+K1_BEST = 10.0**(1.3005-3)         # GHz
 
 # =====================================
 # 3. CRACK-NICOLSON & HYBRID LOSS ENGINE
@@ -307,7 +307,7 @@ if __name__ == "__main__":
 
     tau_loss = TAN0 * unit_loss
 
-    S_loss = GLOBAL_LOSS - tau_loss - TAN_BG
+    S_loss = GLOBAL_LOSS - tau_loss
 
 
     df_out = pd.DataFrame({

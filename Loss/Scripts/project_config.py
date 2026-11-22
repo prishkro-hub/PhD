@@ -101,6 +101,8 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=
     tau_cfg["nu_cut"] = nu_cut_val
 
     return {
+        "material": mat,
+        "resonator": res,
         "spec": res_spec,
         "V_bias": v_bias,
         "spatial_mode": spatial,
@@ -139,10 +141,105 @@ def get_paths(mat=ACTIVE_MATERIAL, res=ACTIVE_RES, volt=ACTIVE_VOLTAGE, spatial=
         "comparison_dir": ROOT_DIR / "Outputs" / mat / res / "Comparisons"
     }
 
+FITTED_PARAMS_PATH = SCRIPTS_DIR / "fitted_params.toml"
+
+if FITTED_PARAMS_PATH.exists():
+    with open(FITTED_PARAMS_PATH, "rb") as f:
+        FITTED_DATA = tomllib.load(f)
+else:
+    FITTED_DATA = {}
+
+def save_fitted_stage_params(
+        stage_prefix,
+        params_dict,
+        mat=ACTIVE_MATERIAL,
+        res=ACTIVE_RES,
+        volt=ACTIVE_VOLTAGE,
+        toml_path=FITTED_PARAMS_PATH
+):
+    """
+    Writes a dictionary of posterior medians into fitted_params.tomml under:
+    [<stage_prefix>.<mat>.<res>.<volt>]
+    Example stage_prefix values: "tau_results", "tan_s0_results", "s_tls_results"
+    """
+    v_tag = f"{float(str(volt).upper().replace('V', '')):g}V"
+    section_header = f"[{stage_prefix}.{mat}.{res}.{v_tag}]"
+
+    lines = [section_header]
+
+    for k, v in params_dict.items():
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            lines.append(f"{k} = {float(v):.6g}" if abs(float(v)) < 1e-3 or abs(float(v)) >= 1e5 else f"{k} = {float(v):.4f}")
+        else:
+            lines.append(f"{k} = {v}")
+    
+    if toml_path.exists():
+        text = toml_path.read_text(encoding="utf-8")
+    else:
+        text = "# Fitted MCMC posterior medians across pipeline stages\n\n"
+
+    # Match from section_header up to the next [section] header (or end of file)
+    pattern = re.compile(
+        rf"({re.escape(section_header)}.*?)(?=\n\[|\Z)",
+        re.DOTALL,
+    )
+    match = pattern.search(text)
+    if match:
+        matched_chunk = match.group(1)
+        remainder = text[match.end(1):]
+
+        # Pull any trailing comment/blank lines at the end of matched_chunk into the next section
+        lines_in_chunk = matched_chunk.splitlines()
+        trailing_comments = []
+        while lines_in_chunk and (
+            lines_in_chunk[-1].strip().startswith("#") or lines_in_chunk[-1].strip() == ""
+        ):
+            trailing_comments.append(lines_in_chunk.pop())
+        trailing_comments.reverse()
+
+        clean_section = "\n".join(lines_in_chunk).rstrip()
+        next_prefix = "\n".join(c for c in trailing_comments if c.strip() != "").lstrip("\n")
+
+        parts = [clean_section]
+        if next_prefix:
+            parts.append(next_prefix)
+        if remainder:
+            parts.append(remainder.lstrip("\n"))
+
+        updated_text = text[:match.start(1)] + "\n\n".join(parts)
+        if text.endswith("\n") and not updated_text.endswith("\n"):
+            updated_text += "\n"
+
+    toml_path.write_text(updated_text, encoding="utf-8")
+    print(f"[TOML SYNC] Updated {section_header} in {toml_path.name}")
+
+
+def get_fitted_stage_params(
+        stage_prefix,
+        mat=ACTIVE_MATERIAL,
+        res=ACTIVE_RES,
+        volt=ACTIVE_VOLTAGE,
+):
+    """Retrieves stored stage parameters for (stage_prefix, mat, res, volt)."""
+    volt_key = f"{float(str(volt).upper().replace('V', "")):g}"
+    entry = (
+        FITTED_DATA.get(stage_prefix, {})
+        .get(mat, {})
+        .get(res, {})
+        .get(volt_key)
+    )
+    if entry is None:
+        raise KeyError(f"Missing [{stage_prefix}.{mat}.{res}.{volt_key}] in {FITTED_PARAMS_PATH}")
+    return dict(entry)
+
 def snapshot_config(target_dir, tag="run"):
-    """Copies config.toml into the output folder for permanent provenance."""
-    dest = Path(target_dir) / f"config_snapshot_{tag}.toml"
-    shutil.copy2(CONFIG_TOML_PATH, dest)
+    """Copies config.toml (and fitted_params.toml if exists) into target_dir."""
+    target = Path(target_dir)
+    target.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(CONFIG_TOML_PATH, target / f"config_snapshot_{tag}.toml")
+    if FITTED_PARAMS_PATH.exists():
+        shutil.copy2(FITTED_PARAMS_PATH, target / f"fitted_params_snapshot_{tag}.toml")
+
 
 
 if __name__ == "__main__":

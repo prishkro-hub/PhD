@@ -1,0 +1,32 @@
+# =============================================
+# 1. FITTED TAU-TLS POSTERIOR MEDIANS (3D FIT)
+# =============================================
+
+[tau_results.Al-Sapp.6789_MHz.3V]
+p_tau_D = 17.7656
+log10_G1_MHz = 1.4813
+log10_tan0 = -4.9381
+
+[tau_results.Al-Sapp.6789_MHz.5V]
+p_tau_D = 12.7116
+log10_G1_MHz = 1.2976
+log10_tan0 = -4.9274
+
+# =============================================
+# 2. FITTED INTRINSIC S-LOSS (tan_s0) PARAMS
+# =============================================
+
+[tan_s0_results.Al-Sapp.6789_MHz.5V]
+log10_A_param = -7.8157
+B_param = 1.1361
+C_param = 6.0736
+log10_D_param = 6.3521
+
+# =============================================
+# 3. FITTED S-TLS SATURATION POSTERIOR MEDIANS
+# =============================================
+
+[s_tls_results.Al_Sapp.6789_MHz.5V]
+p_s_D = 145.0000
+log_10_GS_MHz = 3.2500
+A_val = 1.0000

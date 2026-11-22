@@ -4,7 +4,7 @@
 [active]
 material = "Al-Sapp"
 resonator = "6789_MHz"
-voltage = "5V"
+voltage = "3V"
 spatial_mode = "hfss_histogram"
 
 # =============================================

@@ -21,7 +21,7 @@ except ImportError:
 # Inject the root 'Scripts' directory into Python's path and import the config
 SCRIPTS_DIR = Path(__file__).parents[1] / "Scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
-from project_config import get_paths
+from project_config import get_paths, save_fitted_stage_params
 
 # Fetch paths for the currently active route
 cfg = get_paths()
@@ -36,6 +36,10 @@ N_WALKERS = 32
 NDIM = 3
 MANUAL_CUT = 800
 MIN_BURN_IN = 500  # Increased for a 10000-step MCMC run
+
+# Optional saving logic to automate procedures
+SAVE_TO_FITTED_TOML = True
+FITTED_PARAMS_FILE = SCRIPTS_DIR / "fitted_params.toml"
 
 # =====================================
 # 2. WEED OUT STRAGGLERS
@@ -316,17 +320,28 @@ def analyze_bloch_fit():
     plt.savefig(PLOTS_DIR / f"{PLOT_PREFIX}_Hist.png", dpi=300, bbox_inches="tight")
     plt.close()
 
-    return pd.DataFrame(summary_data)
+    return pd.DataFrame(summary_data), median
 
 # =====================================
 # 6. EXECUTION BLOCK
 # =====================================
 if __name__ == "__main__":
-    df_summary = analyze_bloch_fit()
+    result = analyze_bloch_fit()
 
-    if df_summary is not None:
+    if result is not None:
+        df_summary, median_vals = result
         print(f"\n{'='*50}\nCOMPILING SUMMARY TABLE\n{'='*50}")
         summary_path = FIT_DIR / f"Best_Parameters_{PLOT_PREFIX}.csv"
         df_summary.to_csv(summary_path, index=False)
         print(df_summary.to_string(index=False))
         print(f"\nSaved summary to: {summary_path}")
+
+        if SAVE_TO_FITTED_TOML:
+            save_fitted_stage_params(
+                "s_tls_results",
+                {
+                    "p_s_D": float(median_vals[0]),
+                    "log_10_GS_MHz": float(median_vals[1]),
+                    "A_val": float(median_vals[2]),
+                },
+            )
