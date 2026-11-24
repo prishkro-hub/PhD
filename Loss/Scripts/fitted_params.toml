@@ -1,4 +1,22 @@
 # =============================================
+# 0. FITTED TAU-TLS LOSS BASELINE (4D FIT)
+# =============================================
+
+[tan_tau0_results.Al-Sapp.6789_MHz.3V]
+log10_tan0_base = -5.0253
+log10_tan_bg = -5.6802
+log10_Nc = 2.0715
+beta = 0.30205
+
+[tan_tau0_results.Al-Sapp.6789_MHz.5V]
+log10_tan_bg = -5.6770
+tan_bg_sig_m = 0.0692
+tan_bg_sig_p = 0.0505
+log10_tan0_base = -5.0259
+log10_Nc = 2.0762
+beta = 0.3041
+
+# =============================================
 # 1. FITTED TAU-TLS POSTERIOR MEDIANS (3D FIT)
 # =============================================
 

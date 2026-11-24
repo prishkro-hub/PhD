@@ -34,7 +34,7 @@ V = cfg["V_bias"]
 # W_k = spatial_data["W_k"]
 
 # MCMC Hyperparameters
-N_DIM = 3
+N_DIM = 4
 N_WALKERS = 32
 N_STEPS = 10000
 N_BATCH = 500
@@ -43,16 +43,16 @@ N_BATCH = 500
 # 2. Log Probability of Saturated + Background Loss
 # ==================================================
 def log_probability(theta, n_data, loss_data):
-    log_tan0, log_nc, log_tan_bg = theta
+    log_tan0, log_tan_bg, log_nc, beta = theta
 
-    if not (-7.0 < log_tan0 < -4.0 and 0.0 < log_nc < 6.0 and -8.0 < log_tan_bg < -4.0):
+    if not (-7.0 < log_tan0 < -4.0 and -8.0 < log_tan_bg < -4.0 and 0.0 < log_nc < 6.0 and 0.1 < beta < 1.0):
         return -np.inf
 
     tan0 = 10**log_tan0
-    nc = 10**log_nc
     tan_bg = 10**log_tan_bg
+    nc = 10**log_nc
 
-    model_loss = (tan0 / np.sqrt(1.0 + (n_data / nc))) + tan_bg
+    model_loss = (tan0 / (1.0 + (n_data / nc)) ** beta) + tan_bg
 
     sigma = 3e-7
     chi2 = np.sum(((loss_data - model_loss) / sigma) ** 2)
@@ -65,30 +65,15 @@ def log_probability(theta, n_data, loss_data):
 # ==================================================
 # 3. Load Data & Calculate Cutoff
 # ==================================================
-def load_data(filepath, low_power_thresh=-55.0):
+def load_data(filepath):
     df = pd.read_csv(filepath)
     df.columns = df.columns.str.strip()
-
-    # 1. Find the tau-TLS regime
-    low_pwr = df[df['drive_power'] <= low_power_thresh]
-    y_low = low_pwr.groupby('bias_frequency')['loss_tangent'].mean().values * 1e6
-    nu_arr = np.sort(low_pwr['bias_frequency'].unique())
-
-    tau_baseline = np.mean(y_low[:3])
-    log_nu = np.log10(nu_arr)
-    log_y = np.log10(y_low)
-    slope, intercept, _, _, _ = linregress(log_nu[-4:], log_y[-4:])
-
-    log_nu_cut = (np.log10(tau_baseline) - intercept) / slope
-    nu_cut = 10 ** log_nu_cut
-
-    print(f"Dynamically calculated tau-TLS cutoff: {nu_cut:.0f} Hz", flush=True)
 
     # 2. Filter dataset
     valid_mask = (
         np.isfinite(df['photon_number'])
         & np.isfinite(df['loss_tangent'])
-        & (df['bias_frequency'] <= nu_cut)
+        & (df['bias_frequency'] == 100.0)
     )
 
     df_active = df[valid_mask].copy()
@@ -117,8 +102,8 @@ if __name__ == "__main__":
         backend = emcee.backends.HDFBackend(str(BACKEND_FILE))
         backend.reset(N_WALKERS, N_DIM)
     
-        p0_center = np.array([-5.0, 2.3, -5.5])
-        jitter = np.array([0.05, 0.2, 0.05])
+        p0_center = np.array([-5.0, -5.5, 2.3, 0.5])
+        jitter = np.array([0.05, 0.05, 0.2, 0.05])
 
         p0, initial_time = [], time.time()
         for _ in range(N_WALKERS):
@@ -145,7 +130,7 @@ if __name__ == "__main__":
             N_WALKERS, N_DIM, log_probability,
             args=(n_data, loss_data),
             moves=[
-                (emcee.moves.StretchMove(a=2.0), 0.7),
+                (emcee.moves.StretchMove(a=4.0), 0.7),
                 (emcee.moves.DEMove(), 0.2),
                 (emcee.moves.DESnookerMove(), 0.1)
             ],
@@ -173,7 +158,7 @@ if __name__ == "__main__":
 
         # Save CSV for posterity
         flat_samples = sampler.get_chain(discard=N_STEPS//4, flat=True)
-        df_out = pd.DataFrame(flat_samples, columns=["log_tan0", "log_nc", "log_tan_bg"])
+        df_out = pd.DataFrame(flat_samples, columns=["log_tan0", "log_tan_bg", "log_nc", "beta"])
         df_out.to_csv(CHAIN_FILE, index=False)
 
     print(f"--- Intrinsic tau-Loss Fit COMPLETE | Saved HDF5 & CSV to {FIT_DIR} ---", flush=True)

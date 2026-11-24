@@ -74,6 +74,8 @@ LOSS_SPLINE = RegularGridInterpolator(
 P_MIN, P_MAX = float(P_GRID[0]), float(P_GRID[-1])
 G_MIN, G_MAX = float(G_GRID[0]), float(G_GRID[-1])
 
+TAN_BG = 10.0**(-5.6802)
+
 # =====================================
 # 3. MCMC LOG PROBABILITY
 # =====================================
@@ -90,7 +92,7 @@ def log_probability(theta):
     log_p = np.log10(p_val)
 
     unit_loss = LOSS_SPLINE(np.array([[log_p, log_k1_MHz]]))[0]
-    model = tan0 * unit_loss
+    model = TAN_BG + tan0 * unit_loss
 
     chi2 = np.sum(((LOSS_DATA - model) / SIGMA_DATA) ** 2)
     if np.isnan(chi2) or not np.isfinite(chi2):
@@ -120,7 +122,7 @@ if __name__ == "__main__":
         backend = emcee.backends.HDFBackend(str(BACKEND_FILE))
         backend.reset(N_WALKERS, N_DIM)
 
-        p0_center = np.array([15.0, 0.2, -5.05])
+        p0_center = np.array([15.0, 0.2, -5.0253])
         jitter = np.array([1.5, 0.15, 0.05])
 
         p0 = []

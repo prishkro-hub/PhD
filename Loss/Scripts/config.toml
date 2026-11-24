@@ -4,7 +4,7 @@
 [active]
 material = "Al-Sapp"
 resonator = "6789_MHz"
-voltage = "3V"
+voltage = "5V"
 spatial_mode = "hfss_histogram"
 
 # =============================================
@@ -113,12 +113,20 @@ nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
 [resonators.Al-Sapp.6427_MHz]
 f0_GHz = 6.427
 LS_um = 10.0
+LW_um = 5.0
+hfss_prefix = "LS10LW5_"
+hfss_length_m = 0.01484
+hfss_edc_energy_2d = 4.4838e-11
 nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
 
 [resonators.Al-Sapp.6789_MHz]
 f0_GHz = 6.789
 LS_um = 5.0
-nu_cut_hz = {"3V" = 14834.3, "5V" = 9702.2, "10V" = 407.9 }
+LW_um = 5.0
+hfss_prefix = "LS5LW5_"
+hfss_length_m = 0.0135
+hfss_edc_energy_2d = 5.8015e-11
+nu_cut_hz = {"3V" = 14834.3, "5V" = 9702.2, "10V" = 4070.9 }
 
 [resonators.Al-Sapp.7308_MHz]
 f0_GHz = 7.308

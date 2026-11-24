@@ -24,7 +24,7 @@ VOLT = f"{cfg['V_bias']:g}V"
 TAN0 = 8.59211339   # ppm
 TAN_BG = 3.10e-6
 
-PLOT_MODE = "data"  # Choose from: "data", "comp", "fit"
+PLOT_MODE = "comp"  # Choose from: "data", "comp", "fit"
 
 # --- High-Power Spike Filter Settings (Used in PLOT_MODE == "data") ---
 APPLY_FILTER = True
@@ -315,7 +315,7 @@ def plot_processed_data(input_file, save_path):
     save_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(save_path, dpi=300)
     print(f"Processed data plot saved to: {save_path}")
-    plt.show()
+    # plt.show()
 
 
 # =====================================

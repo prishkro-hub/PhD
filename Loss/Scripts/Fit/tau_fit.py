@@ -77,6 +77,13 @@ G_MIN, G_MAX = float(G_GRID[0]), float(G_GRID[-1])
 # =====================================
 # 3. MCMC LOG PROBABILITY
 # =====================================
+def log_prior_split(x, med, sig_minus, sig_plus):
+    """Continuous asymmetric Gaussian log-prior."""
+    sigma = sig_minus if x < med else sig_plus
+    if sigma <= 0:
+        return 0.0
+    return -0.5 * ((x - med) / sigma) ** 2
+
 def log_probability(theta):
     p_val, log_k1_MHz, log_tan0, log_tan_bg = theta
     
@@ -101,6 +108,11 @@ def log_probability(theta):
     
     # Jeffreys Prior
     log_prob -= np.log(p_val)
+
+    # Asymmetric tan_bg prior
+    log_prob += log_prior_split(
+        log_tan_bg, LOG_TAN_BG_MED, LOG_TAN_BG_SIG_M, LOG_TAN_BG_SIG_P
+    )
 
     if USE_LEGACY_GAUSSIAN_PRIORS:
         log_prob += -0.5 * ((log_k1_MHz - 0.7) / 0.5) ** 2

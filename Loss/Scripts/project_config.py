@@ -172,7 +172,9 @@ def save_fitted_stage_params(
             lines.append(f"{k} = {float(v):.6g}" if abs(float(v)) < 1e-3 or abs(float(v)) >= 1e5 else f"{k} = {float(v):.4f}")
         else:
             lines.append(f"{k} = {v}")
-    
+
+    new_block = "\n".join(lines).rstrip()
+
     if toml_path.exists():
         text = toml_path.read_text(encoding="utf-8")
     else:
@@ -188,31 +190,33 @@ def save_fitted_stage_params(
         matched_chunk = match.group(1)
         remainder = text[match.end(1):]
 
-        # Pull any trailing comment/blank lines at the end of matched_chunk into the next section
+        # Pull any trailing comment/blank lines off the old section so they stay with the next section
         lines_in_chunk = matched_chunk.splitlines()
-        trailing_comments = []
+        trailing = []
         while lines_in_chunk and (
             lines_in_chunk[-1].strip().startswith("#") or lines_in_chunk[-1].strip() == ""
         ):
-            trailing_comments.append(lines_in_chunk.pop())
-        trailing_comments.reverse()
+            trailing.append(lines_in_chunk.pop())
+        trailing.reverse()
 
-        clean_section = "\n".join(lines_in_chunk).rstrip()
-        next_prefix = "\n".join(c for c in trailing_comments if c.strip() != "").lstrip("\n")
+        # Drop leading blank lines before the next section's comment banner
+        while trailing and trailing[0].strip() == "":
+            trailing.pop(0)
 
-        parts = [clean_section]
-        if next_prefix:
-            parts.append(next_prefix)
-        if remainder:
-            parts.append(remainder.lstrip("\n"))
-
-        updated_text = text[:match.start(1)] + "\n\n".join(parts)
-        if text.endswith("\n") and not updated_text.endswith("\n"):
-            updated_text += "\n"
+        if trailing:
+            if matched_chunk.endswith("\n"):
+                trailing.append("")
+            updated_text = text[:match.start(1)] + new_block + "\n\n" + "\n".join(trailing) + remainder
+        elif remainder:
+            updated_text = text[:match.start(1)] + new_block + "\n\n" + remainder.lstrip("\n")
+        else:
+            updated_text = text[:match.start(1)] + new_block + "\n"
+    else:
+        sep = "" if text.endswith("\n\n") else ("\n" if text.endswith("\n") else "\n\n")
+        updated_text = text + sep + new_block + "\n"
 
     toml_path.write_text(updated_text, encoding="utf-8")
     print(f"[TOML SYNC] Updated {section_header} in {toml_path.name}")
-
 
 def get_fitted_stage_params(
         stage_prefix,
@@ -221,7 +225,7 @@ def get_fitted_stage_params(
         volt=ACTIVE_VOLTAGE,
 ):
     """Retrieves stored stage parameters for (stage_prefix, mat, res, volt)."""
-    volt_key = f"{float(str(volt).upper().replace('V', "")):g}"
+    volt_key = f"{float(str(volt).upper().replace('V', "")):g}V"
     entry = (
         FITTED_DATA.get(stage_prefix, {})
         .get(mat, {})

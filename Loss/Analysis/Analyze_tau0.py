@@ -21,7 +21,7 @@ except ImportError:
 # Inject the root 'Scripts' directory into Python's path and import the config
 SCRIPTS_DIR = Path(__file__).parents[1] / "Scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
-from project_config import get_paths
+from project_config import get_paths, save_fitted_stage_params
 
 # Fetch paths for the currently active route
 cfg = get_paths()
@@ -32,9 +32,13 @@ CHAIN_FILE = FIT_DIR / "tan_0_fit.h5"
 PLOT_PREFIX = "tau_0"
 
 N_WALKERS = 32
-NDIM = 3
+NDIM = 4
 MANUAL_CUT = 800
 MIN_BURN_IN = 500  # Increased for a 10000-step MCMC run
+
+# Optional saving logic to automate procedures
+SAVE_TO_FITTED_TOML = True
+FITTED_PARAMS_FILE = SCRIPTS_DIR / "fitted_params.toml"
 
 # =====================================
 # 2. WEED OUT STRAGGLERS
@@ -91,7 +95,7 @@ def load_chain_data(chain_path, n_walkers=32, ndim=3):
     # Fallback for older CSV chains
     df = pd.read_csv(chain_path)
     df.columns = df.columns.str.strip()
-    cols = ["log_tan0", "log_nc", "log_tan_bg"]
+    cols = ["log_tan0", "log_tan_bg", "log_nc", "beta"]
     if not all(c in df.columns for c in cols):
         print(f"Error: CSV missing required columns. Found: {df.columns.to_list()}")
         return None, None
@@ -133,10 +137,10 @@ def prune_stuck_walkers(chain, log_probs, max_delta_lp=25.0, mad_thresh=5.0):
     if len(bad_indices) > 0:
         print(f"\n[PRUNING] Filtering out {len(bad_indices)} stuck walker(s): {bad_indices.tolist()}")
         for idx in bad_indices:
-            t0_stuck, nc_stuck, t_bg_stuck = walker_med_params[idx]
+            t0_stuck, t_bg_stuck, nc_stuck, beta_stuck = walker_med_params[idx]
             print(
-                f"   -> Walker {idx:2d}: tan0={t0_stuck:.2f} D, "
-                f"Gamma_1={nc_stuck:.4f} MHz, C_tau={t_bg_stuck:.2e} "
+                f"   -> Walker {idx:2d}: beta={beta_stuck:.2f}, tan0={t0_stuck:.2f}, "
+                f"N_c={nc_stuck:.4f}, tan_bg={t_bg_stuck:.2e} "
                 f"(median log_prob={walker_med_lp[idx]:.1f} vs best={best_med_lp:.1f})"
             )
 
@@ -180,9 +184,9 @@ def analyze_bloch_fit(chain_file):
     print(f"[INFO] Active ensemble: {n_good_walkers}/{n_walkers_loaded} walkers over {n_steps} steps.")
 
     # 3. Autocorrelation Analysis
-    labels_text = ["tan_0", "N_c", "tan_bg"]
-    units = ["", "", ""]
-    plot_labels = [r"$\tan_0$", r"$N_c$", r"$\tan_{bg}$"]
+    labels_text = ["tan_0", "N_c", "tan_bg", "beta"]
+    units = ["", "", "", ""]
+    plot_labels = [r"$\tan_0$", r"$N_c$", r"$\tan_{bg}$", r"$\beta$"]
 
     try:
         tau_array = emcee.autocorr.integrated_time(chain, tol=0)
@@ -234,9 +238,6 @@ def analyze_bloch_fit(chain_file):
     lower = median - p16
     upper = p84 - median
 
-    map_linear = 10.0 ** map_vals
-    med_linear = 10.0 ** median
-
     print(f"\n{'Parameter':<15} | {'MAP (Best Fit)':<15} | {'Median (Posterior)':<25}")
     print("-" * 65)
     summary_data = []
@@ -245,7 +246,7 @@ def analyze_bloch_fit(chain_file):
         print(
             f"{labels_text[i]:<15} | {val_fmt.format(map_vals[i]):<15} | "
             f"{val_fmt.format(median[i])} (-{val_fmt.format(lower[i])} / +{val_fmt.format(upper[i])}) {units[i]}"
-            f"\nLinearized {labels_text[i]:<15} | {val_fmt.format(med_linear[i])}"
+            f"\nLinearized {labels_text[i]:<15} | {val_fmt.format(median[i])}"
         )
         summary_data.append({
             "Parameter": labels_text[i],
@@ -314,17 +315,31 @@ def analyze_bloch_fit(chain_file):
     plt.savefig(PLOTS_DIR / f"{PLOT_PREFIX}_Hist.png", dpi=300, bbox_inches="tight")
     plt.close()
 
-    return pd.DataFrame(summary_data)
+    return pd.DataFrame(summary_data), median, lower, upper
 
 # =====================================
 # 6. EXECUTION BLOCK
 # =====================================
 if __name__ == "__main__":
-    df_summary = analyze_bloch_fit(CHAIN_FILE)
+    result = analyze_bloch_fit(CHAIN_FILE)
 
-    if df_summary is not None:
+    if result is not None:
+        df_summary, median, sig_m, sig_p = result
         print(f"\n{'='*50}\nCOMPILING SUMMARY TABLE\n{'='*50}")
         summary_path = FIT_DIR / f"Best_Parameters_{PLOT_PREFIX}.csv"
         df_summary.to_csv(summary_path, index=False)
         print(df_summary.to_string(index=False))
         print(f"\nSaved summary to: {summary_path}")
+
+        if SAVE_TO_FITTED_TOML:
+            save_fitted_stage_params(
+                "tan_tau0_results",
+                {
+                    "log10_tan_bg": float(median[1]),
+                    "tan_bg_sig_m": float(sig_m[1]),
+                    "tan_bg_sig_p": float(sig_p[1]),
+                    "log10_tan0_base": float(median[0]),
+                    "log10_Nc": float(median[2]),
+                    "beta": float(median[3]),
+                },
+            )

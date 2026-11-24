@@ -69,36 +69,34 @@ NORM_LOSS_DATA = LOSS_DATA / TAN_S0_DATA
 EB_DATA = grid_archive["dE_dt"]
 NPH_DATA = grid_archive["n_ph"]
 
-# Dynamic sigma (std of point-to-point diff along n_ph)
+# Dynamic sigma: point-to-point diff along n_ph at each fixed bias frequency
 SIGMA_RAW = np.zeros_like(LOSS_DATA)
-SIGMA_NORM = np.zeros_like(NORM_LOSS_DATA)
 
-for pwr in np.unique(PWR_DATA):
-    m = (PWR_DATA == pwr)
-    order = np.argsort(NU_DATA[m])
-    y_raw_sorted = LOSS_DATA[m][order]
-    y_norm_sorted = NORM_LOSS_DATA[m][order]
+for nu in np.unique(NU_DATA):
+    m = (NU_DATA == nu)
+    order = np.argsort(NPH_DATA[m])
+    y_sorted = LOSS_DATA[m][order]
 
-    raw_std = np.std(y_raw_sorted)
-    norm_std = np.std(y_norm_sorted)
-    raw_floor = max(float(np.median(raw_std)), s_cfg["sigma_min_floor"])
-    norm_floor = max(float(np.median(norm_std)), s_cfg["sigma_min_floor"])
+    if len(y_sorted) > 2:
+        local_sigma = max(
+            float(np.std(np.diff(y_sorted)) / np.sqrt(2.0)),
+            s_cfg["sigma_min_floor"],
+        )
+    elif len(y_sorted) == 2:
+        local_sigma = max(
+            float(abs(y_sorted[1] - y_sorted[0]) / np.sqrt(2.0)),
+            s_cfg["sigma_min_floor"],
+        )
+    else:
+        local_sigma = s_cfg.get("sigma_single_fallback", 2.5e-7)
 
-    raw_mean = np.nanmean(y_raw_sorted)
-    norm_mean = np.nanmean(y_norm_sorted)
-    
-    f_rel = s_cfg["f_rel"]
+    SIGMA_RAW[m] = local_sigma
 
-    SIGMA_RAW[m] = np.sqrt(raw_floor**2 + (f_rel * np.maximum(raw_mean, 0.0))**2)
-    SIGMA_NORM[m] = np.sqrt(norm_floor**2 + (f_rel * np.maximum(norm_mean, 0.0))**2)
+# Exact error propagation for NORM_LOSS_DATA = LOSS_DATA / TAN_S0_DATA
+SIGMA_NORM = SIGMA_RAW / np.maximum(TAN_S0_DATA, 1e-12)
 
-
-# # Hybrid per-point uncertainty
-# SIGMA_FLOOR = 2.0e-7    # VNA noise floor
-# F_REL = 0.05            # 5% fractional loss
-
-# SIGMA_RAW = np.sqrt(SIGMA_FLOOR**2 + (F_REL * LOSS_DATA)**2)
-# SIGMA_NORM = np.sqrt(SIGMA_FLOOR**2 + (F_REL * NORM_LOSS_DATA)**2)
+# print(f"SIGMA_RAW:  {SIGMA_RAW}")
+# print(f"SIGMA_NORM: {SIGMA_NORM}")
 
 # Cubic spline over uniform(log10(p), log10(Gamma_1)) axes
 LOSS_SPLINE = RegularGridInterpolator(
