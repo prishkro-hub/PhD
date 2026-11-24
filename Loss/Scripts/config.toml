@@ -26,6 +26,7 @@ g_min = -2.5
 g_max = 3.0
 pwr_min = -75.0
 pwr_max = -11.0
+use_gamma1_prior = true
 # Safeguard floors for dynamic sigma
 sigma_min_floor = 1.0e-7
 sigma_single_fallback = 2.5e-7

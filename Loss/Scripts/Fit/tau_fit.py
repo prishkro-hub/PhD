@@ -13,7 +13,7 @@ from schwimmbad import MPIPool
 # =====================================
 # Inject the root 'Scripts' directory into Python's path and import the config
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from project_config import get_paths
+from project_config import get_paths, get_fitted_stage_params, snapshot_config
 
 # Fetch paths for the currently active route
 cfg = get_paths()
@@ -30,7 +30,12 @@ CSV_CHAIN_FILE = cfg["tau_chain"]
 
 # Set False for ignorant flat priors (recommended for spatial fits),
 # or True to apply the legacy Gaussian priors from the uniform fit.
-USE_LEGACY_GAUSSIAN_PRIORS = True
+USE_LEGACY_GAUSSIAN_PRIORS = cfg["tau"]["use_gamma1_prior"]
+
+bg_fit = get_fitted_stage_params("tan_tau0_results")
+LOG_TAN_BG_MED = float(bg_fit["log10_tan_bg"])
+LOG_TAN_BG_SIG_M = float(bg_fit["tan_bg_sig_m"])
+LOG_TAN_BG_SIG_P = float(bg_fit["tan_bg_sig_p"])
 
 # MCMC Hyperparameters
 N_DIM = 4
@@ -128,12 +133,21 @@ if __name__ == "__main__":
             pool.wait()
             sys.exit(0)
 
-        print(f"--- STARTING SPLINE_ACCELERATED LOSS MCMC ({SPATIAL_MODE}) ---", flush=True)
+        # Snapshot exact startup configs before any long MCMC run starts
+        snapshot_config(FIT_DIR, tag="tau_fit")  # use tag="tau_fit" in tau_fit.py
+
+        print(
+            f"--- STARTING BG + TAU-LOSS MCMC ({SPATIAL_MODE}), "
+            # f"Powers [{PWR_MIN:.0f}, {PWR_MAX:.0f}] dBm, "
+            f"N={len(LOSS_DATA)} ---",
+            flush=True
+        )
+        # print(f"--- STARTING SPLINE_ACCELERATED LOSS MCMC ({SPATIAL_MODE}) ---", flush=True)
 
         backend = emcee.backends.HDFBackend(str(BACKEND_FILE))
         backend.reset(N_WALKERS, N_DIM)
 
-        p0_center = np.array([15.0, 0.2, -5.05, -5.56])
+        p0_center = np.array([15.0, 0.2, -5.05, LOG_TAN_BG_MED])
         jitter = np.array([1.5, 0.15, 0.05, 0.05])
 
         p0 = []
