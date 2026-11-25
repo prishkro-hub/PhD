@@ -21,10 +21,10 @@ DATA_DIR = cfg["data_dir"]
 COMP_DIR = cfg["comp_dir"]
 FINAL_DIR = cfg["comparison_dir"]
 VOLT = f"{cfg['V_bias']:g}V"
-TAN0 = 8.59211339   # ppm
-TAN_BG = 3.10e-6
+TAN0 = 10.0**(6.0 - 5.0251)   # ppm
+TAN_BG = 10.0**(-5.6801)
 
-PLOT_MODE = "data"  # Choose from: "data", "comp", "fit"
+PLOT_MODE = "comp"  # Choose from: "data", "comp", "fit"
 
 # --- High-Power Spike Filter Settings (Used in PLOT_MODE == "data") ---
 APPLY_FILTER = True

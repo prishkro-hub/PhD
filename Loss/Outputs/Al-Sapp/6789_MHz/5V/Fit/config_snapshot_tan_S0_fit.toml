@@ -1,0 +1,180 @@
+# =============================================
+# 1. ACTIVE PIPELINE TARGET
+# =============================================
+[active]
+material = "Al-Sapp"
+resonator = "6789_MHz"
+voltage = "5V"
+spatial_mode = "hfss_histogram"
+
+# =============================================
+# 2. SHARED QUADRATURE & SOLVER SETTINGS
+# =============================================
+[solver]
+n_grid = 45
+n_spatial = 12
+n_quad = 40
+nn_cutoff = 100
+
+# =============================================
+# 3. TAU-TLS STAGE (Per-Voltage nu_cut_hz)
+# =============================================
+[tau]
+p_min = 1.0
+p_max= 50.0
+g_min = -2.5
+g_max = 3.0
+pwr_min = -75.0
+pwr_max = -11.0
+use_gamma1_prior = true
+# Safeguard floors for dynamic sigma
+sigma_min_floor = 1.0e-7
+sigma_single_fallback = 2.5e-7
+# MCMC Hyperparameters
+n_walkers = 32
+n_steps = 25000
+n_batch = 1000
+
+# =============================================
+# 4. INTRINSIC S-LOSS STAGE (Full Sweep Range)
+# =============================================
+[tan_s0]
+pwr_min = -75.0
+pwr_max = -60.0
+# Safeguard floor & relative weight for dynamic per-frequency hybrid sigma
+sigma_min_floor = 1.5e-7
+f_rel = 0.05
+prior_c_mean = 5.5
+prior_c_std = 1.0
+n_walkers = 32
+n_steps = 20000
+n_batch = 1000
+
+# =============================================
+# 5. S-TLS SATURATION STAGE (Full Sweep Range)
+# =============================================
+[s_tls]
+p_min = 1.0
+p_max = 300.0
+g_min = 1.5
+g_max = 4.5
+pwr_min = -35.0
+pwr_max = -11.0
+nu_cut = 9702.0
+fit_normalized_ratio = true
+# Safeguard floor & relative weight for per-pwoer hybrid sigma
+sigma_min_floor = 1.5e-7
+f_rel = 0.05
+use_p_prior = false
+prior_p_mean = 150.0
+prior_p_std = 10.0
+use_gamma1_prior = true
+prior_log_k1_mean = 3.0
+prior_log_k1_std = 0.5
+n_walkers = 32
+n_steps = 30000
+n_batch = 1000
+
+# =========================================
+# 6. POST-PROCESSING & PLOTTING (ANALYSIS)
+# =========================================
+[analysis]
+manual_cut = 800
+min_burn_in = 500
+burn_in_fraction = 0.25
+filter_plot_powers = true
+plot_pwr_min = -75.0
+plot_pwr_max = -11.0
+sweep_cuts = [1.698e9, 4.80e10]     # [V/(m*s)]
+power_cuts = [-55.0, -25.0]         # [dBm]
+
+# =========================================
+# 7. RESONATOR SPECS & TAU-S CUTOFFS (Hz)
+# =========================================
+[resonators.Al-Al2O3.6637_MHz]
+f0_GHz = 6.637
+LS_um = 10.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Al-Al2O3.6987_MHz]
+f0_GHz = 6.987
+LS_um = 5.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Al-Al2O3.7524_MHz]
+f0_GHz = 7.524
+LS_um = 3.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Al-Al2O3.8037_MHz]
+f0_GHz = 8.037
+LS_um = 2.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Al-Sapp.6427_MHz]
+f0_GHz = 6.427
+LS_um = 10.0
+LW_um = 5.0
+hfss_prefix = "LS10LW5_"
+hfss_length_m = 0.01484
+hfss_edc_energy_2d = 4.4838e-11
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Al-Sapp.6789_MHz]
+f0_GHz = 6.789
+LS_um = 5.0
+LW_um = 5.0
+hfss_prefix = "LS5LW5_"
+hfss_length_m = 0.0135
+hfss_edc_energy_2d = 5.8015e-11
+nu_cut_hz = {"3V" = 14834.3, "5V" = 9702.2, "10V" = 4070.9 }
+
+[resonators.Al-Sapp.7308_MHz]
+f0_GHz = 7.308
+LS_um = 3.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Al-Sapp.7835_MHz]
+f0_GHz = 7.835
+LS_um = 2.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Ta-Nb-Sapp.6550_MHz]
+f0_GHz = 6.550
+LS_um = 10.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Ta-Nb-Sapp.6939_MHz]
+f0_GHz = 6.939
+LS_um = 5.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Ta-Nb-Sapp.7506_MHz]
+f0_GHz = 7.506
+LS_um = 3.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Ta-Nb-Sapp.8037_MHz]
+f0_GHz = 8.037
+LS_um = 2.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Ta-Sapp.6870_MHz]
+f0_GHz = 6.870
+LS_um = 10.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Ta-Sapp.7411_MHz]
+f0_GHz = 7.411
+LS_um = 5.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Ta-Sapp.8022_MHz]
+f0_GHz = 8.022
+LS_um = 3.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }
+
+[resonators.Ta-Sapp.8575_MHz]
+f0_GHz = 8.575
+LS_um = 2.0
+nu_cut_hz = {"3V" = 9702.0, "5V" = 9702.0, "10V" = 9702.0 }

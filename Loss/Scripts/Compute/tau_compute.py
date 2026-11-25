@@ -21,7 +21,7 @@ cfg = get_paths()
 DATA_DIR = cfg["data_dir"]
 COMP_DIR = cfg["comp_dir"]
 
-INPUT_FILE = cfg["raw_csv"]
+INPUT_FILE = cfg["clean_csv"]
 GRID_FILE = cfg["tau_grid"]
 OUTPUT_FILE = cfg["processed_csv"]
 

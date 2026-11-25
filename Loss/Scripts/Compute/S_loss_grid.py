@@ -15,7 +15,7 @@ from schwimmbad import MPIPool
 SCRIPTS_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from project_config import get_paths
+from project_config import get_paths, get_fitted_stage_params, snapshot_config
 cfg = get_paths()
 
 DATA_DIR = cfg["data_dir"]
@@ -43,10 +43,12 @@ N_GRID = slv_cfg["n_grid"]
 NN = slv_cfg["nn_cutoff"]
 N_QUAD = slv_cfg["n_quad"]
 
-BEST_TAN_S0_CSV = FIT_DIR / "Best_Parameters_tan_S0.csv" 
-# Fallback MAP parameters from tan_s0 fit if the CSV is missing
-# DEFAULT_TAN_S0_PARAMS = (4.9283e-8, 1.0556, 5.5915, 1.1094e7)
-DEFAULT_TAN_S0_PARAMS = (10.0**(-7.8157), 1.1361, 6.1527, 10.0**(6.3521))
+# Get TAN_S0_PARAMS from the toml
+s0_fit = get_fitted_stage_params("tan_s0_results")
+A_VAL = 10.0 ** float(s0_fit["log10_A_param"])
+B_VAL = float(s0_fit["B_param"])
+C_VAL = float(s0_fit["C_param"])
+D_VAL = 10.0 ** float(s0_fit["log10_D_param"])
 
 SPATIAL_FIELD = cfg["spatial_npz"]
 SPATIAL_MODE = cfg["spatial_mode"]
@@ -283,22 +285,6 @@ def compute_unit_loss_curve(
 # =====================================
 # 4. LOAD S-TLS DATA & TAN_S0 ENVELOPE
 # =====================================
-def get_tan_s0_params(chain_filepath):
-    if chain_filepath.exists():
-        df_map = pd.read_csv(chain_filepath)
-        df_map.set_index("Parameter", inplace=True)
-
-        MAP_log_A = df_map.loc["logA", "MAP (Best Fit)"]
-        MAP_B = df_map.loc["B", "MAP (Best Fit)"]
-        MAP_C = df_map.loc["C", "MAP (Best Fit)"]
-        MAP_log_D = df_map.loc["logD", "MAP (Best Fit)"]
-
-        MAP_A = 10.0 ** MAP_log_A
-        MAP_D = 10.0 ** MAP_log_D
-        
-        return MAP_A, MAP_B, MAP_C, MAP_D
-    return DEFAULT_TAN_S0_PARAMS
-
 def calc_tan_s0(Eb_array, A, B, C, D):
     u0 = D / Eb_array
     u1 = u0 * np.exp(2.0 * C)
@@ -306,7 +292,7 @@ def calc_tan_s0(Eb_array, A, B, C, D):
 
     return A * np.exp(B * integral_val)
 
-def load_loss_data(filepath, chain_filepath):
+def load_loss_data(filepath):
     df = pd.read_csv(filepath)
 
     pwr_data = df["power"].values
@@ -325,8 +311,7 @@ def load_loss_data(filepath, chain_filepath):
     )
 
     eb_active = dE_dt[valid_mask]
-    A_s0, B_s0, C_s0, D_s0 = get_tan_s0_params(chain_filepath)
-    tan_s0_active = calc_tan_s0(eb_active, A_s0, B_s0, C_s0, D_s0)
+    tan_s0_active = calc_tan_s0(eb_active, A_VAL, B_VAL, C_VAL, D_VAL)
 
     return (
         pwr_data[valid_mask],
@@ -335,8 +320,7 @@ def load_loss_data(filepath, chain_filepath):
         E_ac[valid_mask],
         n_data[valid_mask],
         nu[valid_mask],
-        tan_s0_active,
-        np.array([A_s0, B_s0, C_s0, D_s0], dtype=np.float64)
+        tan_s0_active
     )
 
 
@@ -347,9 +331,8 @@ def load_loss_data(filepath, chain_filepath):
     GLOBAL_E_AC,
     GLOBAL_NPH,
     GLOBAL_NU,
-    GLOBAL_TAN_S0,
-    TAN_S0_PARAMS
-) = load_loss_data(INPUT_FILE, BEST_TAN_S0_CSV)
+    GLOBAL_TAN_S0
+) = load_loss_data(INPUT_FILE)
 
 def compute_grid_point(task):
     i, p_val, j, g_val = task
@@ -373,6 +356,8 @@ if __name__ == "__main__":
         if not pool.is_master():
             pool.wait()
             sys.exit(0)
+        # Snapshot exact startup configs before any long run starts
+        snapshot_config(DATA_DIR, tag="S_grid")
 
         print(f"--- STARTING S-TLS LOSS GRID BUILDER ({SPATIAL_MODE}) ---", flush=True)
         print(
@@ -424,7 +409,6 @@ if __name__ == "__main__":
                 dE_dt=GLOBAL_EB,
                 loss_data=GLOBAL_LOSS,
                 tan0_data=GLOBAL_TAN_S0,
-                tan_s0_params=TAN_S0_PARAMS,
                 E_ac=GLOBAL_E_AC,
                 n_ph=GLOBAL_NPH,
                 nu=GLOBAL_NU,

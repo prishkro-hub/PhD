@@ -14,7 +14,7 @@ from schwimmbad import MPIPool
 # =====================================
 # Inject the root 'Scripts' directory into Python's path and import the config
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from project_config import get_paths
+from project_config import get_paths, snapshot_config
 
 # Fetch paths for the currently active route
 cfg = get_paths()
@@ -112,6 +112,9 @@ if __name__ == "__main__":
         if not pool.is_master():
             pool.wait()
             sys.exit(0)
+
+        # Snapshot exact startup configs before any long MCMC run starts
+        snapshot_config(FIT_DIR, tag="tan_S0_fit")  # use tag="tau_fit" in tau_fit.py
 
         print("--- STARTING TAN_S0 FIT ---", flush=True)
 

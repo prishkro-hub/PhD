@@ -59,9 +59,21 @@
             "problemMatcher": []
         },
         {
-            "label": "Tail Active Script Logs",
+            "label": "Tail Loss Log (Select Route)",
             "type": "shell",
-            "command": "bash -l -c 'LOG_PATH=\"${fileDirname}\"; LOG_PATH=\"${LOG_PATH/\\/Scripts\\//\\/Logs\\/}\"; tail -f \"$LOG_PATH\"/*.log'",
+            "command": "bash -l -c 'tail -F -n 10 Loss/Logs/${input:lossMaterial}/${input:lossResonator}/${input:lossVoltage}/${input:lossStage}'",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": true,
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Tail Active Config Log",
+            "type": "shell",
+            "command": "bash -l -c 'ROUTE=$(python3 -c \"import tomllib; a=tomllib.load(open(\\\"Scripts/config.toml\\\",\\\"rb\\\"))[\\\"active\\\"]; print(f\\\"{a[\\\"material\\\"]}/{a[\\\"resonator\\\"]}/{a[\\\"voltage\\\"]}\\\")\"); echo \"Tailing  Loss/Logs/$ROUTE/${input:lossStage}\"; tail -F -n 10 Loss/Logs/$ROUTE/${input:lossStage}'",
             "presentation": {
                 "reveal": "always",
                 "panel": "new",
@@ -72,25 +84,78 @@
             "problemMatcher": []
         },
         {
-            "label": "Tail Specific Logs (Prompt)",
+            "label": "Tail Specific Logs (Custom Prompt)",
             "type": "shell",
-            "command": "bash -l -c 'tail -f ${input:customLogFilter}'",
+            "command": "bash -l -c 'tail -F -n 10 ${input:customLogFilter}'",
             "presentation": {
                 "reveal": "always",
                 "panel": "new",
                 "focus": true,
                 "clear": true
-            },
-            "isBackground": true,
-            "problemMatcher": []
+            }
         }
     ],
     "inputs": [
         {
+            "id": "lossMaterial",
+            "type": "pickString",
+            "description": "Select Material:",
+            "default": "Al-Sapp",
+            "options": [
+                "Al-Sapp",
+                "Al-Al2O3",
+                "Ta-Sapp",
+                "Ta-Nb-Sapp"
+            ]
+        },
+        {
+            "id": "lossResonator",
+            "type": "pickString",
+            "description": "Select Resonator:",
+            "default": "6789_MHz",
+            "options": [
+                "6789_MHz",
+                "6427_MHz",
+                "7524_MHz",
+                "6987_MHz"
+            ]
+        },
+        {
+            "id": "lossVoltage",
+            "type": "pickString",
+            "description": "Select Bias Voltage:",
+            "default": "5V",
+            "options": [
+                {"label": "3V", "value": "3V"},
+                {"label": "5V", "value": "5V"},
+                {"label": "10V", "value": "10V"},
+                {"label": "3V & 5V (Simultaneous)", "value": "{3V,5V}"},
+                {"label": "All Voltages (*)", "value": "*"}
+            ]
+        },
+        {
+            "id": "lossStage",
+            "type": "pickString",
+            "description": "Select Stage / Log File:",
+            "default": "Compute/Tau_Compute.log",
+            "options": [
+                {"label": "Tau Grid", "value": "Compute/Tau_loss_grid.log"},
+                {"label": "Tau Compute", "value": "Compute/Tau_compute.log"},
+                {"label": "S Grid", "value": "Compute/S_loss_grid.log"},
+                {"label": "S Compute", "value": "Compute/S_compute.log"},
+                {"label": "All Compute Logs", "value": "Compute/*.log"},
+                {"label": "Tau0 Fit", "value": "Fit/Tan0_Fit.log"},
+                {"label": "Tau Fit", "value": "Fit/Tau_Fit.log"},
+                {"label": "S0 Fit", "value": "Fit/Tan_S0_Fit.log"},
+                {"label": "S Fit", "value": "Fit/S_Fit.log"},
+                {"label": "All Fit Logs", "value": "Fit/*.log"},
+            ]
+        },
+        {
             "id": "customLogFilter",
             "type": "promptString",
             "description": "Enter log path(s) or pattern (relative to root or absolute):",
-            "default": "Freq_Shift/Logs/Two-TLS/Fit/*.log"
+            "default": "Logs/Al-Sapp/6789_MHz/{3V,5V}/Compute/S_loss_grid.log"
         }
     ]
 }

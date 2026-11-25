@@ -9,12 +9,12 @@ log10_Nc = 2.0715
 beta = 0.30205
 
 [tan_tau0_results.Al-Sapp.6789_MHz.5V]
-log10_tan_bg = -5.6770
-tan_bg_sig_m = 0.0692
-tan_bg_sig_p = 0.0505
-log10_tan0_base = -5.0259
-log10_Nc = 2.0762
-beta = 0.3041
+log10_tan_bg = -5.6801
+tan_bg_sig_m = 0.0733
+tan_bg_sig_p = 0.0519
+log10_tan0 = -5.0251
+log10_Nc = 2.0705
+beta = 0.3020
 
 # =============================================
 # 1. FITTED TAU-TLS POSTERIOR MEDIANS (3D FIT)
@@ -26,10 +26,10 @@ log10_G1_MHz = 1.4813
 log10_tan0 = -4.9381
 
 [tau_results.Al-Sapp.6789_MHz.5V]
-p_tau_D = 28.2431
-log10_G1_MHz = -0.5186
-log10_tan0 = -5.0432
-log10_tan_bg = -5.5112
+p_tau_D = 28.2770
+log10_G1_MHz = -0.5132
+log10_tan0 = -5.0433
+log10_tan_bg = -5.5110
 
 # =============================================
 # 2. FITTED INTRINSIC S-LOSS (tan_s0) PARAMS
