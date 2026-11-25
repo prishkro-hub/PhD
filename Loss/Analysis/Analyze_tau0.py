@@ -140,7 +140,7 @@ def prune_stuck_walkers(chain, log_probs, max_delta_lp=25.0, mad_thresh=5.0):
             t0_stuck, t_bg_stuck, nc_stuck, beta_stuck = walker_med_params[idx]
             print(
                 f"   -> Walker {idx:2d}: beta={beta_stuck:.2f}, tan0={t0_stuck:.2f}, "
-                f"N_c={nc_stuck:.4f}, tan_bg={t_bg_stuck:.2e} "
+                f"N_c={nc_stuck:.2f}, tan_bg={t_bg_stuck:.2f} "
                 f"(median log_prob={walker_med_lp[idx]:.1f} vs best={best_med_lp:.1f})"
             )
 
@@ -184,9 +184,9 @@ def analyze_bloch_fit(chain_file):
     print(f"[INFO] Active ensemble: {n_good_walkers}/{n_walkers_loaded} walkers over {n_steps} steps.")
 
     # 3. Autocorrelation Analysis
-    labels_text = ["tan_0", "N_c", "tan_bg", "beta"]
+    labels_text = ["tan_bg", "tan_0", "N_c", "beta"]
     units = ["", "", "", ""]
-    plot_labels = [r"$\tan_0$", r"$N_c$", r"$\tan_{bg}$", r"$\beta$"]
+    plot_labels = [r"$\tan_{bg}$", r"$\tan_0$", r"$N_c$", r"$\beta$"]
 
     try:
         tau_array = emcee.autocorr.integrated_time(chain, tol=0)
@@ -242,7 +242,7 @@ def analyze_bloch_fit(chain_file):
     print("-" * 65)
     summary_data = []
     for i in range(NDIM):
-        val_fmt = "{:.4e}"
+        val_fmt = "{:.4f}"
         print(
             f"{labels_text[i]:<15} | {val_fmt.format(map_vals[i]):<15} | "
             f"{val_fmt.format(median[i])} (-{val_fmt.format(lower[i])} / +{val_fmt.format(upper[i])}) {units[i]}"
@@ -335,10 +335,10 @@ if __name__ == "__main__":
             save_fitted_stage_params(
                 "tan_tau0_results",
                 {
-                    "log10_tan_bg": float(median[1]),
-                    "tan_bg_sig_m": float(sig_m[1]),
-                    "tan_bg_sig_p": float(sig_p[1]),
-                    "log10_tan0_base": float(median[0]),
+                    "log10_tan_bg": float(median[0]),
+                    "tan_bg_sig_m": float(sig_m[0]),
+                    "tan_bg_sig_p": float(sig_p[0]),
+                    "log10_tan0": float(median[1]),
                     "log10_Nc": float(median[2]),
                     "beta": float(median[3]),
                 },

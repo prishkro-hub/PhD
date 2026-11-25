@@ -20,7 +20,7 @@ cfg = get_paths()
 DATA_DIR = cfg["data_dir"]
 FIT_DIR = cfg["fit_dir"]
 
-INPUT_FILE = cfg["raw_csv"]
+INPUT_FILE = cfg["clean_csv"]
 BACKEND_FILE = FIT_DIR / "tan_0_fit.h5"
 CHAIN_FILE = FIT_DIR / "tan_0_fit.csv"
 
@@ -43,13 +43,13 @@ N_BATCH = 500
 # 2. Log Probability of Saturated + Background Loss
 # ==================================================
 def log_probability(theta, n_data, loss_data):
-    log_tan0, log_tan_bg, log_nc, beta = theta
+    log_tan_bg, log_tan0, log_nc, beta = theta
 
-    if not (-7.0 < log_tan0 < -4.0 and -8.0 < log_tan_bg < -4.0 and 0.0 < log_nc < 6.0 and 0.1 < beta < 1.0):
+    if not (-8.0 < log_tan_bg < -4.0 and -7.0 < log_tan0 < -4.0 and 0.0 < log_nc < 6.0 and 0.1 < beta < 1.0):
         return -np.inf
 
-    tan0 = 10**log_tan0
     tan_bg = 10**log_tan_bg
+    tan0 = 10**log_tan0
     nc = 10**log_nc
 
     model_loss = (tan0 / (1.0 + (n_data / nc)) ** beta) + tan_bg
@@ -102,7 +102,7 @@ if __name__ == "__main__":
         backend = emcee.backends.HDFBackend(str(BACKEND_FILE))
         backend.reset(N_WALKERS, N_DIM)
     
-        p0_center = np.array([-5.0, -5.5, 2.3, 0.5])
+        p0_center = np.array([-5.5, -5.0, 2.3, 0.5])
         jitter = np.array([0.05, 0.05, 0.2, 0.05])
 
         p0, initial_time = [], time.time()
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
         # Save CSV for posterity
         flat_samples = sampler.get_chain(discard=N_STEPS//4, flat=True)
-        df_out = pd.DataFrame(flat_samples, columns=["log_tan0", "log_tan_bg", "log_nc", "beta"])
+        df_out = pd.DataFrame(flat_samples, columns=["log_tan_bg", "log_tan0", "log_nc", "beta"])
         df_out.to_csv(CHAIN_FILE, index=False)
 
     print(f"--- Intrinsic tau-Loss Fit COMPLETE | Saved HDF5 & CSV to {FIT_DIR} ---", flush=True)

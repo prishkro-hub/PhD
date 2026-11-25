@@ -13,7 +13,7 @@ from schwimmbad import MPIPool
 # =====================================
 # Inject the root 'Scripts' directory into Python's path and import the config
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from project_config import get_paths
+from project_config import get_paths, get_fitted_stage_params, snapshot_config
 
 # Fetch paths for the currently active route
 cfg = get_paths()
@@ -93,10 +93,16 @@ else:
     raise ValueError(f"Unknown SPATIAL_MODE: {SPATIAL_MODE}")
 
 # MCMC Parameters
-# TAN_BG = 3.05844025e-6   
-TAN0 = 10.0**(-4.9274)
-P_BEST = 12.7585            # D
-K1_BEST = 10.0**(1.3005-3)         # GHz
+tau_fit = get_fitted_stage_params("tau_results")
+P_TAU_D = float(tau_fit["p_tau_D"])
+G1_GHZ = 10.0 ** (float(tau_fit["log10_G1_MHz"]) - 3.0)
+TAN0 = 10.0 ** float(tau_fit["log10_tan0"])
+
+if "log10_tan_bg" in tau_fit:
+    TAN_BG = 10.0 ** float(tau_fit["log10_tan_bg"])
+else:
+    bg_fit = get_fitted_stage_params("tan_tau0_results")
+    TAN_BG = 10.0 ** float(bg_fit["log10_tan_bg"])
 
 # =====================================
 # 3. CRACK-NICOLSON & HYBRID LOSS ENGINE
@@ -298,16 +304,20 @@ GLOBAL_EB, GLOBAL_LOSS, GLOBAL_E_AC, GLOBAL_NPH, GLOBAL_NU, GLOBAL_DRIVE = load_
 if __name__ == "__main__":
     start_time = time.time()
 
+    # Snapshot exact startup configs before any long run starts
+    snapshot_config(COMP_DIR, tag="tau_compute")
+
     unit_loss = compute_unit_loss_curve(
-        P_BEST, K1_BEST, GLOBAL_EB, GLOBAL_E_AC,
+        P_TAU_D, G1_GHZ, GLOBAL_EB, GLOBAL_E_AC,
         U_W, Y_W, Y_N, SIN_U, COS_U, SIN2_U,
         NN, SQRT_NN, RABI_COEFF, V_COEFF,
         R_AC_NODES, R_DC_NODES, W_R_NODES
     )
 
     tau_loss = TAN0 * unit_loss
+    tau_plus_bg = TAN_BG + tau_loss
 
-    S_loss = GLOBAL_LOSS - tau_loss
+    S_loss = GLOBAL_LOSS - tau_plus_bg
 
 
     df_out = pd.DataFrame({

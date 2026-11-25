@@ -28,20 +28,19 @@ GRID_FILE = cfg["tau_grid"]
 BACKEND_FILE = cfg["tau_backend"]
 CSV_CHAIN_FILE = cfg["tau_chain"]
 
-# Set False for ignorant flat priors (recommended for spatial fits),
-# or True to apply the legacy Gaussian priors from the uniform fit.
-USE_LEGACY_GAUSSIAN_PRIORS = cfg["tau"]["use_gamma1_prior"]
-
 bg_fit = get_fitted_stage_params("tan_tau0_results")
 LOG_TAN_BG_MED = float(bg_fit["log10_tan_bg"])
 LOG_TAN_BG_SIG_M = float(bg_fit["tan_bg_sig_m"])
 LOG_TAN_BG_SIG_P = float(bg_fit["tan_bg_sig_p"])
 
+tau_cfg = cfg["tau"]
+USE_LEGACY_GAUSSIAN_PRIORS = tau_cfg["use_gamma1_prior"]
+
 # MCMC Hyperparameters
 N_DIM = 4
-N_WALKERS = cfg["tau"]["n_walkers"]
-N_STEPS = cfg["tau"]["n_steps"]
-N_BATCH = cfg["tau"]["n_batch"]
+N_WALKERS = tau_cfg["n_walkers"]
+N_STEPS = tau_cfg["n_steps"]
+N_BATCH = tau_cfg["n_batch"]
 
 # =====================================
 # 2. LOAD PRECOMPUTED GRID & SPLINE
@@ -62,9 +61,9 @@ for nu in np.unique(NU_DATA):
     order = np.argsort(NPH_DATA[mask])
     y_sorted = LOSS_DATA[mask][order]
     if len(y_sorted) > 1:
-        local_sigma = max(np.std(np.diff(y_sorted)) / np.sqrt(2.0), cfg["tau"]["sigma_min_floor"])
+        local_sigma = max(np.std(np.diff(y_sorted)) / np.sqrt(2.0), tau_cfg["sigma_min_floor"])
     else:
-        local_sigma = cfg["tau"]["sigma_single_fallback"]
+        local_sigma = tau_cfg["sigma_single_fallback"]
     SIGMA_DATA[mask] = local_sigma
 
 # Cubic spline over uniform(log10(p), log10(Gamma_1)) axes

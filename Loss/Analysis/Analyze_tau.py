@@ -31,11 +31,11 @@ FIT_DIR = cfg["fit_dir"]
 PLOTS_DIR = FIT_DIR / "Plots"
 SPATIAL_MODE = cfg["spatial_mode"]
 
-CHAIN_FILE = FIT_DIR / "tau_3fit.csv"
-PLOT_PREFIX = "tau3"
+CHAIN_FILE = FIT_DIR / f"tau_fit_{SPATIAL_MODE}.csv"
+PLOT_PREFIX = f"tau_{SPATIAL_MODE}"
 
 N_WALKERS = 32
-NDIM = 3
+NDIM = 4
 MANUAL_CUT = 800
 MIN_BURN_IN = 500  # Increased for a 10000-step MCMC run
 
@@ -98,7 +98,7 @@ def load_chain_data(chain_path, n_walkers=32, ndim=3):
     # Fallback for older CSV chains
     df = pd.read_csv(chain_path)
     df.columns = df.columns.str.strip()
-    cols = ["p_val", "log_k1_MHz", "log_tan0"]
+    cols = ["p_val", "log_k1_MHz", "log_tan0", "log_tan_bg"]
     if not all(c in df.columns for c in cols):
         print(f"Error: CSV missing required columns. Found: {df.columns.to_list()}")
         return None, None
@@ -140,10 +140,10 @@ def prune_stuck_walkers(chain, log_probs, max_delta_lp=25.0, mad_thresh=5.0):
     if len(bad_indices) > 0:
         print(f"\n[PRUNING] Filtering out {len(bad_indices)} stuck walker(s): {bad_indices.tolist()}")
         for idx in bad_indices:
-            p_stuck, k_stuck, t0_stuck = walker_med_params[idx]
+            p_stuck, k_stuck, t0_stuck, t_bg_stuck = walker_med_params[idx]
             print(
                 f"   -> Walker {idx:2d}: p_tau={p_stuck:.2f} D, "
-                f"Gamma_1={k_stuck:.2f} MHz, tan0={t0_stuck:.2f} "
+                f"Gamma_1={k_stuck:.2f} MHz, tan0={t0_stuck:.2f}, tan_bg={t_bg_stuck:.2f} "
                 f"(median log_prob={walker_med_lp[idx]:.1f} vs best={best_med_lp:.1f})"
             )
 
@@ -191,9 +191,9 @@ def analyze_bloch_fit(chain_file):
     print(f"[INFO] Active ensemble: {n_good_walkers}/{n_walkers_loaded} walkers over {n_steps} steps.")
 
     # 3. Autocorrelation Analysis
-    labels_text = ["p_tau", "Gamma_1", "tan_0"]
-    units = ["D", "MHz", ""]
-    plot_labels = [r"$p_\tau$", r"$\Gamma_1^\tau$", r"$\tan(\delta_0)$"]
+    labels_text = ["p_tau", "Gamma_1", "tan_0", "tan_bg"]
+    units = ["D", "MHz", "", ""]
+    plot_labels = [r"$p_\tau$", r"$\Gamma_1^\tau$", r"$\tan(\delta_0)$", r"$\tan(\delta_{bg})$"]
 
     try:
         tau_array = emcee.autocorr.integrated_time(chain, tol=0)
@@ -345,5 +345,6 @@ if __name__ == "__main__":
                     "p_tau_D": float(median_vals[0]),
                     "log10_G1_MHz": float(median_vals[1]),
                     "log10_tan0": float(median_vals[2]),
+                    "log10_tan_bg": float(median_vals[3]),
                 },
             )
